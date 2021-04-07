@@ -45,8 +45,118 @@
 
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
+
 // The circle constant tau = 2*pi. One tau is one rotation in radians.
 const double tau = 2 * M_PI;
+
+
+void load_bari_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+
+  //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
+  std::string modelpath = "package://geometric_shapes/test/resources/barillet.obj";
+  ROS_INFO("mesh loades : %s ",modelpath.c_str());
+
+  static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
+  shapes::Mesh* cao_bary = shapes::createMeshFromResource(modelpath,scale);
+
+  ROS_INFO("mesh loades : %i triangles : %s ",cao_bary->triangle_count,modelpath.c_str());
+
+
+  shape_msgs::Mesh mesh_bary;
+  shapes::ShapeMsg mesh_bary_msg;
+
+  shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
+  mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
+
+  int N_bari_x = 2;
+  int N_bari_y = 4;
+  int N_bari_z = 1;
+  for (int xi = 0; xi< N_bari_x;xi++){
+    for (int yi = 0; yi< N_bari_y;yi++){
+      for (int zi = 0; zi< N_bari_z;zi++){
+
+        // Now let's define a collision object ROS message for the robot to avoid.
+        moveit_msgs::CollisionObject collision_object_bari;
+        collision_object_bari.header.frame_id = move_group_interface.getPlanningFrame();
+
+        char id_bari[20];
+        sprintf(id_bari,"bari%d",xi+N_bari_x*yi);
+
+        // The id of the object is used to identify it.
+        collision_object_bari.id = id_bari;
+
+        // Define a pose for the box (specified relative to frame_id)
+        geometry_msgs::Pose pose;
+        pose.orientation.w = 1.0;
+        //double res_x = center.x -0.5 + 0.1*xi;
+        pose.position.x = 0.5+ 0.04*xi;
+        pose.position.y = -0.05+ 0.05*yi;
+        pose.position.z = 0.15;
+
+        collision_object_bari.meshes.push_back(mesh_bary);
+        collision_object_bari.mesh_poses.push_back(pose);
+        collision_object_bari.operation = collision_object_bari.ADD;
+
+        collision_object_baris.push_back(collision_object_bari);
+      }
+    }
+  }
+  // Now, let's add the collision object into the world
+  // (using a vector that could contain additional objects)
+  ROS_INFO_NAMED("tutorial", "Add an object into the world");
+  planning_scene_interface.addCollisionObjects(collision_object_baris);
+
+
+}
+
+void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+
+  //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
+  std::string modelpath = "package://geometric_shapes/test/resources/Contenant_barillet.stl";
+  ROS_INFO("mesh loades : %s ",modelpath.c_str());
+
+  static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
+  shapes::Mesh* cao_bary = shapes::createMeshFromResource(modelpath,scale);
+
+  ROS_INFO("mesh loades : %i triangles : %s ",cao_bary->triangle_count,modelpath.c_str());
+
+
+  shape_msgs::Mesh mesh_bary;
+  shapes::ShapeMsg mesh_bary_msg;
+
+  shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
+  mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
+
+  // Now let's define a collision object ROS message for the robot to avoid.
+  moveit_msgs::CollisionObject collision_object_bari;
+  collision_object_bari.header.frame_id = move_group_interface.getPlanningFrame();
+
+  // The id of the object is used to identify it.
+  collision_object_bari.id = "carton";
+
+  // Define a pose for the box (specified relative to frame_id)
+  geometry_msgs::Pose pose;
+  pose.orientation.x = 0.5;
+  pose.orientation.z = 0.5;
+  pose.orientation.w = 0.5;
+  pose.orientation.y = 0.5;
+  pose.position.x = 0.5;
+  pose.position.y = 0.0;
+  pose.position.z = 0.3;
+
+  collision_object_bari.meshes.push_back(mesh_bary);
+  collision_object_bari.mesh_poses.push_back(pose);
+  collision_object_bari.operation = collision_object_bari.ADD;
+
+  collision_object_baris.push_back(collision_object_bari);
+
+  // Now, let's add the collision object into the world
+  // (using a vector that could contain additional objects)
+  ROS_INFO_NAMED("tutorial", "Add an object into the world");
+  planning_scene_interface.addCollisionObjects(collision_object_baris);
+
+
+}
 
 int main(int argc, char** argv)
 {
@@ -67,7 +177,7 @@ int main(int argc, char** argv)
   // MoveIt operates on sets of joints called "planning groups" and stores them in an object called
   // the `JointModelGroup`. Throughout MoveIt the terms "planning group" and "joint model group"
   // are used interchangably.
-  static const std::string PLANNING_GROUP = "panda_arm";
+  static const std::string PLANNING_GROUP = "arm_group";
 
   // The :planning_interface:`MoveGroupInterface` class can be easily
   // setup using just the name of the planning group you would like to control and plan for.
@@ -87,7 +197,7 @@ int main(int argc, char** argv)
   // The package MoveItVisualTools provides many capabilities for visualizing objects, robots,
   // and trajectories in RViz as well as debugging tools such as step-by-step introspection of a script.
   namespace rvt = rviz_visual_tools;
-  moveit_visual_tools::MoveItVisualTools visual_tools("panda_link0");
+  moveit_visual_tools::MoveItVisualTools visual_tools("base_link");
   visual_tools.deleteAllMarkers();
 
   // Remote control is an introspection tool that allows users to step through a high level script
@@ -118,13 +228,13 @@ int main(int argc, char** argv)
 
   // Start the demo
   // ^^^^^^^^^^^^^^^^^^^^^^^^^
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
   // .. _move_group_interface-planning-to-pose-goal:
   //
   // Planning to a Pose goal
   // ^^^^^^^^^^^^^^^^^^^^^^^
-  // We can plan a motion for this group to a desired pose for the
+  // We can plan a motion for this group (robot) to a desired pose for the
   // end-effector.
   geometry_msgs::Pose target_pose1;
   target_pose1.orientation.w = 1.0;
@@ -208,8 +318,8 @@ int main(int argc, char** argv)
   // Let's specify a path constraint and a pose goal for our group.
   // First define the path constraint.
   moveit_msgs::OrientationConstraint ocm;
-  ocm.link_name = "panda_link7";
-  ocm.header.frame_id = "panda_link0";
+  ocm.link_name = "link_6";
+  ocm.header.frame_id = "base_link";
   ocm.orientation.w = 1.0;
   ocm.absolute_x_axis_tolerance = 0.1;
   ocm.absolute_y_axis_tolerance = 0.1;
@@ -344,44 +454,106 @@ int main(int argc, char** argv)
   visual_tools.trigger();
   visual_tools.prompt("next step");
 
-  // The result may look like this:
-  //
-  // .. image:: ./move_group_interface_tutorial_clear_path.gif
-  //    :alt: animation showing the arm moving relatively straight toward the goal
-  //
-  // Now let's define a collision object ROS message for the robot to avoid.
-  moveit_msgs::CollisionObject collision_object;
-  collision_object.header.frame_id = move_group_interface.getPlanningFrame();
 
-  // The id of the object is used to identify it.
-  collision_object.id = "box1";
+  const Eigen::Vector3d center(0.5,0.0,0.0);
+  //center.x;
 
-  // Define a box to add to the world.
+  std::vector<moveit_msgs::CollisionObject> collision_object_baris;
+
+  load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+  load_carton_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+
+
+
+  // //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
+  // std::string modelpath = "package://moveit_resources_panda_description/meshes/barillet.obj";
+  // ROS_INFO("mesh loades : %s ",modelpath.c_str());
+
+  // static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
+  // shapes::Mesh* cao_bary = shapes::createMeshFromResource(modelpath,scale);
+
+  // ROS_INFO("mesh loades : %i triangles : %s ",cao_bary->triangle_count,modelpath.c_str());
+
+
+  // shape_msgs::Mesh mesh_bary;
+  // shapes::ShapeMsg mesh_bary_msg;
+
+  // shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
+  // mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
+
+  // std::vector<moveit_msgs::CollisionObject> collision_object_baris;
+  // int N_bari_x = 4;
+  // int N_bari_y = 4;
+  // for (int i = 0; i< N_bary;i++){
+
+  // // Now let's define a collision object ROS message for the robot to avoid.
+  //   moveit_msgs::CollisionObject collision_object_bari;
+  //   collision_object_bari.header.frame_id = move_group_interface.getPlanningFrame();
+
+  //   char id_bari[20];
+  //   sprintf(id_bari,"bari%d",i);
+
+  //   // The id of the object is used to identify it.
+  //   collision_object_bari.id = id_bari;
+
+  //   // Define a pose for the box (specified relative to frame_id)
+  //   geometry_msgs::Pose pose;
+  //   pose.orientation.w = 1.0;
+  //   pose.position.x = 0.5;
+  //   pose.position.y = -1 + 0.1*i;
+  //   pose.position.z = 0.0;
+
+  //   collision_object_bari.meshes.push_back(mesh_bary);
+  //   collision_object_bari.mesh_poses.push_back(pose);
+  //   collision_object_bari.operation = collision_object_bari.ADD;
+
+  //   collision_object_baris.push_back(collision_object_bari);
+  // }
+  // // Now, let's add the collision object into the world
+  // // (using a vector that could contain additional objects)
+  // ROS_INFO_NAMED("tutorial", "Add an object into the world");
+  // planning_scene_interface.addCollisionObjects(collision_object_baris);
+
+
+
+  // // The result may look like this:
+  // //
+  // // .. image:: ./move_group_interface_tutorial_clear_path.gif
+  // //    :alt: animation showing the arm moving relatively straight toward the goal
+  // //
+  // // Now let's define a collision object ROS message for the robot to avoid.
+  // moveit_msgs::CollisionObject collision_object;
+  // collision_object.header.frame_id = move_group_interface.getPlanningFrame();
+
+  // // The id of the object is used to identify it.
+  // collision_object.id = "box1";
+
+  // // Define a box to add to the world.
   shape_msgs::SolidPrimitive primitive;
-  primitive.type = primitive.BOX;
-  primitive.dimensions.resize(3);
-  primitive.dimensions[primitive.BOX_X] = 0.1;
-  primitive.dimensions[primitive.BOX_Y] = 1.5;
-  primitive.dimensions[primitive.BOX_Z] = 0.5;
+  // primitive.type = primitive.BOX;
+  // primitive.dimensions.resize(3);
+  // primitive.dimensions[primitive.BOX_X] = 0.1;
+  // primitive.dimensions[primitive.BOX_Y] = 1.5;
+  // primitive.dimensions[primitive.BOX_Z] = 0.5;
 
-  // Define a pose for the box (specified relative to frame_id)
-  geometry_msgs::Pose box_pose;
-  box_pose.orientation.w = 1.0;
-  box_pose.position.x = 0.5;
-  box_pose.position.y = 0.0;
-  box_pose.position.z = 0.25;
+  // // Define a pose for the box (specified relative to frame_id)
+  // geometry_msgs::Pose box_pose;
+  // box_pose.orientation.w = 1.0;
+  // box_pose.position.x = 0.5;
+  // box_pose.position.y = 0.0;
+  // box_pose.position.z = 0.25;
 
-  collision_object.primitives.push_back(primitive);
-  collision_object.primitive_poses.push_back(box_pose);
-  collision_object.operation = collision_object.ADD;
+  // collision_object.primitives.push_back(primitive);
+  // collision_object.primitive_poses.push_back(box_pose);
+  // collision_object.operation = collision_object.ADD;
 
-  std::vector<moveit_msgs::CollisionObject> collision_objects;
-  collision_objects.push_back(collision_object);
+  // std::vector<moveit_msgs::CollisionObject> collision_objects;
+  // collision_objects.push_back(collision_object);
 
   // Now, let's add the collision object into the world
   // (using a vector that could contain additional objects)
-  ROS_INFO_NAMED("tutorial", "Add an object into the world");
-  planning_scene_interface.addCollisionObjects(collision_objects);
+  //ROS_INFO_NAMED("tutorial", "Add an object into the world");
+  //planning_scene_interface.addCollisionObjects(collision_objects);
 
   // Show text in RViz of status and wait for MoveGroup to receive and process the collision object message
   visual_tools.publishText(text_pose, "Add object", rvt::WHITE, rvt::XLARGE);
@@ -431,7 +603,7 @@ int main(int argc, char** argv)
   // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
   // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
   ROS_INFO_NAMED("tutorial", "Attach the object to the robot");
-  move_group_interface.attachObject(object_to_attach.id, "panda_hand");
+  move_group_interface.attachObject(object_to_attach.id, "link_tool");
 
   visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
   visual_tools.trigger();
@@ -470,7 +642,15 @@ int main(int argc, char** argv)
   // Now, let's remove the objects from the world.
   ROS_INFO_NAMED("tutorial", "Remove the objects from the world");
   std::vector<std::string> object_ids;
-  object_ids.push_back(collision_object.id);
+
+  for (std::vector<moveit_msgs::CollisionObject>::iterator it = collision_object_baris.begin() ; it != collision_object_baris.end(); it++)
+  {
+
+    moveit_msgs::CollisionObject obj = *it;
+    object_ids.push_back(obj.id);
+  }
+
+
   object_ids.push_back(object_to_attach.id);
   planning_scene_interface.removeCollisionObjects(object_ids);
 
