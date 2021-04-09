@@ -255,11 +255,6 @@ int main(int argc, char** argv)
 
   // Start the demo
   // ^^^^^^^^^^^^^^^^^^^^^^^^^
-<<<<<<< Updated upstream
-  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-=======
->>>>>>> Stashed changes
-
   // Adding objects to the environment
   // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   //
@@ -484,11 +479,8 @@ int main(int argc, char** argv)
   // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
   // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
   ROS_INFO_NAMED("tutorial", "Attach the object to the robot");
-<<<<<<< Updated upstream
-  move_group_interface.attachObject(object_to_attach.id, "link_tool");
-=======
-  move_group_interface.attachObject(collision_object_baris[0].id, "panda_hand");
->>>>>>> Stashed changes
+
+  move_group_interface.attachObject(collision_object_baris[0].id, "link_tool");
 
   visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
   visual_tools.trigger();
