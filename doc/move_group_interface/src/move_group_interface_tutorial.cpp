@@ -299,7 +299,7 @@ int main(int argc, char** argv)
 
   // Next get the current set of joint values for the group.
   std::vector<double> joint_group_positions;
-  trajecto_state.getWayPointPtr(13)->copyJointGroupPositions(joint_model_group, joint_group_positions);
+  trajecto_state.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions);
   int number_joint = 7;
 
   for (int i =0 ; i< number_joint  ; i++ ){
@@ -529,6 +529,25 @@ int main(int argc, char** argv)
   success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
   ROS_INFO_NAMED("tutorial", "Go to target_pose_final %s", success ? "" : "FAILED");
   move_group_interface.execute(my_plan);
+
+
+
+  robot_trajectory::RobotTrajectory trajecto_state2(move_group_interface.getCurrentState()->getRobotModel(), move_group_interface.getName());
+
+  trajecto_state2.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), my_plan.trajectory_);
+
+  //ROS_INFO_NAMED("trajectory print : ", " test size : %d ", trajecto_state2.getWayPointCount() );
+
+  // Next get the current set of joint values for the group.
+  std::vector<double> joint_group_positions2;
+  trajecto_state2.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions2);
+
+  for (int i =0 ; i< number_joint  ; i++ ){
+    std::cout << "angle joint i = " << i << " : " << joint_group_positions2[i]*180/3.14159265 << std::endl;
+  }
+  //std::cout << "test std::cout" << trajecto_state2.getWayPoint(5) << std::endl;  //trajecto_state2.getWayPointCount()
+
+
 
 
   visual_tools.publishText(text_pose, "Go to target_pose_final", rvt::WHITE, rvt::XLARGE);
