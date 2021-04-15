@@ -158,6 +158,47 @@ void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &pl
 
 }
 
+
+std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
+  
+  move_group_interface.setPoseTarget(target_pose);
+
+
+  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+
+  bool success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+  ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
+  move_group_interface.execute(my_plan);
+
+
+
+
+  robot_trajectory::RobotTrajectory trajecto_state(move_group_interface.getCurrentState()->getRobotModel(), move_group_interface.getName());
+
+  trajecto_state.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), my_plan.trajectory_);
+
+  //ROS_INFO_NAMED("trajectory print : ", " test size : %d ", trajecto_state.getWayPointCount() );
+
+  // Next get the current set of joint values for the group.
+  std::vector<double> joint_group_positions;
+  trajecto_state.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions);
+  int number_joint = 7;
+
+  for (int i =0 ; i< number_joint  ; i++ ){
+    std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
+  }
+  //std::cout << "test std::cout" << trajecto_state.getWayPoint(5) << std::endl;  //trajecto_state.getWayPointCount()
+
+
+  visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
+
+
+  return joint_group_positions;
+}
+
+
+
+
 int main(int argc, char** argv)
 {
 
@@ -265,7 +306,6 @@ int main(int argc, char** argv)
   scan_pose.position.x = 0.75;
   scan_pose.position.y = 0.0;
   scan_pose.position.z = 0.5;
-  move_group_interface.setPoseTarget(scan_pose);
 
 
   visual_tools.deleteAllMarkers();
@@ -283,37 +323,13 @@ int main(int argc, char** argv)
 
   move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
-  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
-  bool success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-  ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
-  move_group_interface.execute(my_plan);
-
-
-
-  robot_trajectory::RobotTrajectory trajecto_state(move_group_interface.getCurrentState()->getRobotModel(), move_group_interface.getName());
-
-  trajecto_state.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), my_plan.trajectory_);
-
-  //ROS_INFO_NAMED("trajectory print : ", " test size : %d ", trajecto_state.getWayPointCount() );
-
-  // Next get the current set of joint values for the group.
-  std::vector<double> joint_group_positions;
-  trajecto_state.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions);
-  int number_joint = 7;
-
-  for (int i =0 ; i< number_joint  ; i++ ){
-    std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
-  }
-  //std::cout << "test std::cout" << trajecto_state.getWayPoint(5) << std::endl;  //trajecto_state.getWayPointCount()
+  std::vector<double> traj1 = go_to_position(move_group_interface, scan_pose, visual_tools, joint_model_group);
 
   visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
-  visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
   visual_tools.trigger();
 
   visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
 
 
   const Eigen::Vector3d center(0.5,0.0,0.0);
@@ -339,11 +355,14 @@ int main(int argc, char** argv)
 
 
   geometry_msgs::Pose bari_pose;
-  bari_pose.orientation.x = 1.0;
-  bari_pose.position.x = 0.5;
-  bari_pose.position.y = 0.0;
-  bari_pose.position.z = 0.57;
-  move_group_interface.setPoseTarget(bari_pose);
+  bari_pose.orientation.x = 0.93373;
+  bari_pose.orientation.y = -0.35765;
+  bari_pose.orientation.z = 0.0057657;
+  bari_pose.orientation.w = 0.014457;
+
+  bari_pose.position.x = 0.49;
+  bari_pose.position.y = -0.090119;
+  bari_pose.position.z = 0.53731+0.1;
 
 
   visual_tools.deleteAllMarkers();
@@ -364,21 +383,15 @@ int main(int argc, char** argv)
 
   move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
-  // Now when we plan a trajectory it will avoid the obstacle
-  success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-  ROS_INFO_NAMED("tutorial", "Visualizing plan to bari %s", success ? "" : "FAILED");
-  move_group_interface.execute(my_plan);
 
 
-  visual_tools.publishText(text_pose, "Go to bari", rvt::WHITE, rvt::XLARGE);
-  visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
+
+  std::vector<double> traj2 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group);
+
+  visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
   visual_tools.trigger();
 
-
-
-
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the plan is complete");
-
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -496,8 +509,6 @@ int main(int argc, char** argv)
 
 
 
-  // Replan, but now with the object in hand.
-  move_group_interface.setStartStateToCurrentState();
 
 
   geometry_msgs::Pose target_pose_final;
@@ -523,46 +534,17 @@ int main(int argc, char** argv)
 
 
 
-
-
-  // Now when we plan a trajectory it will avoid the obstacle
-  success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-  ROS_INFO_NAMED("tutorial", "Go to target_pose_final %s", success ? "" : "FAILED");
-  move_group_interface.execute(my_plan);
+  // Replan, but now with the object in hand.
+  move_group_interface.setStartStateToCurrentState();
 
 
 
-  robot_trajectory::RobotTrajectory trajecto_state2(move_group_interface.getCurrentState()->getRobotModel(), move_group_interface.getName());
+  std::vector<double> traj3 = go_to_position(move_group_interface, target_pose_final, visual_tools, joint_model_group);
 
-  trajecto_state2.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), my_plan.trajectory_);
-
-  //ROS_INFO_NAMED("trajectory print : ", " test size : %d ", trajecto_state2.getWayPointCount() );
-
-  // Next get the current set of joint values for the group.
-  std::vector<double> joint_group_positions2;
-  trajecto_state2.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions2);
-
-  for (int i =0 ; i< number_joint  ; i++ ){
-    std::cout << "angle joint i = " << i << " : " << joint_group_positions2[i]*180/3.14159265 << std::endl;
-  }
-  //std::cout << "test std::cout" << trajecto_state2.getWayPoint(5) << std::endl;  //trajecto_state2.getWayPointCount()
-
-
-
-
-  visual_tools.publishText(text_pose, "Go to target_pose_final", rvt::WHITE, rvt::XLARGE);
-  visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
+  visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
   visual_tools.trigger();
 
-
-
-
-
-
-
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the plan is complete");
-
-
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
