@@ -161,7 +161,65 @@ void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &pl
 
 std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
   
+
+    // - AnytimePathShortening
+    // - SBL
+    // - EST
+    // - LBKPIECE
+    // - BKPIECE
+    // - KPIECE
+    // - RRT
+    // - RRTConnect
+    // - RRTstar
+    // - TRRT
+    // - PRM
+    // - PRMstar
+    // - FMT
+    // - BFMT
+    // - PDST
+    // - STRIDE
+    // - BiTRRT
+    // - LBTRRT
+    // - BiEST
+    // - ProjEST
+    // - LazyPRM
+    // - LazyPRMstar
+    // - SPARS
+    // - SPARStwo
+    // - PersistentLazyPRMstar
+    // - PersistentLazyPRM
+    // - SemiPersistentLazyPRMstar
+    // - SemiPersistentLazyPRM
+
+
+
+  std::string planner_id = "RRTstar";
+  move_group_interface.setPlannerId(planner_id);
+  move_group_interface.setPlanningTime(10);
+  /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
+      Allowed values are in (0,1]. The maximum joint velocity specified
+      in the robot model is multiplied by the factor. If the value is 0, it is set to
+      the default value, which is defined in joint_limits.yaml of the moveit_config.
+      If the value is greater than 1, it is set to 1.0. */
+  move_group_interface.setMaxVelocityScalingFactor(1.0);
+
+  /** \brief Set a scaling factor for optionally reducing the maximum joint acceleration.
+      Allowed values are in (0,1]. The maximum joint acceleration specified
+      in the robot model is multiplied by the factor. If the value is 0, it is set to
+      the default value, which is defined in joint_limits.yaml of the moveit_config.
+      If the value is greater than 1, it is set to 1.0. */
+  move_group_interface.setMaxAccelerationScalingFactor(1.0);
+
+
+  std::string planner_test = move_group_interface.getPlannerId();
+  std::cout<<"getPlannerId : "<<planner_test<<std::endl;
+
+  //std::cout<<planner_test*<<std::endl;
+
+
   move_group_interface.setPoseTarget(target_pose);
+  // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
+  // void getJointValueTarget(std::vector<double>& group_variable_values) const;
 
 
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -240,6 +298,7 @@ int main(int argc, char** argv)
   // Raw pointers are frequently used to refer to the planning group for improved performance.
   const moveit::core::JointModelGroup* joint_model_group =
       move_group_interface.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+
 
 
 
