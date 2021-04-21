@@ -46,10 +46,16 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 #include <chrono>
+#include <thread>
 
 
 // The circle constant tau = 2*pi. One tau is one rotation in radians.
 const double tau = 2 * M_PI;
+
+double Global_time_find_planning = 0;
+double Global_time_traj = 0;
+double Global_nb_step_traj = 0;
+double Global_move_tool = 0;
 
 
 void load_bari_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
@@ -197,7 +203,7 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   std::string planner_id = "RRTconnect";
   move_group_interface.setPlannerId(planner_id);
-  move_group_interface.setPlanningTime(60);
+  move_group_interface.setPlanningTime(300);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -231,13 +237,21 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
 
-  std::cout<< "TIME TO FIND THE PATH : " << my_plan.planning_time_ <<std::endl;
+  double time_find_plan = my_plan.planning_time_;
+
+  Global_time_find_planning += time_find_plan;
+
+  std::cout<< "TIME TO FIND THE PATH : " << time_find_plan <<std::endl;
 
   std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
   move_group_interface.execute(my_plan);
   std::chrono::high_resolution_clock::time_point end_traj = std::chrono::high_resolution_clock::now();
 
-  std::cout<< "TIME TO EXECUTE TRAJ : " << std::chrono::duration_cast<std::chrono::microseconds>(end_traj-begin_traj).count()/1000000.0 <<std::endl;
+  double time_traj = std::chrono::duration_cast<std::chrono::microseconds>(end_traj-begin_traj).count()/1000000.0;
+
+  Global_time_traj += time_traj;
+
+  std::cout<< "TIME TO EXECUTE TRAJ : " << time_traj <<std::endl;
 
 
 
@@ -362,7 +376,7 @@ int main(int argc, char** argv)
 
 
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -389,7 +403,7 @@ int main(int argc, char** argv)
 
 
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -401,7 +415,7 @@ int main(int argc, char** argv)
   visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
   visual_tools.trigger();
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
   const Eigen::Vector3d center(0.5,0.0,0.0);
@@ -411,6 +425,10 @@ int main(int argc, char** argv)
 
   load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
   load_carton_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+
+
+  std::chrono::seconds dura(30);
+  std::this_thread::sleep_for(dura);
 
   // Now, let's add the collision object into the world
   // (using a vector that could contain additional objects)
@@ -423,7 +441,7 @@ int main(int argc, char** argv)
 
 
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
 
 
   int N_bari_x = 2;
@@ -444,8 +462,8 @@ int main(int argc, char** argv)
 
 
       bari_pose.position.x = 0.5+ 0.04*xi;
-      bari_pose.position.y = -0.05+ 0.05*yi;
-      bari_pose.position.z = 0.53731+0.3;
+      bari_pose.position.y = -0.05 -0.04+ 0.05*yi;
+      bari_pose.position.z = 0.53731+0.02;
 
 
 
@@ -458,7 +476,7 @@ int main(int argc, char** argv)
 
 
 
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -475,7 +493,7 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -490,13 +508,17 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
+      std::chrono::seconds dura2(10);
+      std::this_thread::sleep_for(dura2);
+
+
 
 
 
 
 
       /* Wait for MoveGroup to receive and process the attached collision object message */
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
 
 
@@ -519,7 +541,7 @@ int main(int argc, char** argv)
 
 
 
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -535,7 +557,7 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -558,9 +580,10 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
+      std::this_thread::sleep_for(dura2);
 
       /* Wait for MoveGroup to receive and process the attached collision object message */
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
 
 
       
@@ -570,6 +593,12 @@ int main(int argc, char** argv)
 }
 
 
+  std::cout<<"Global time to find plan : "<<Global_time_find_planning<<" s "<<std::endl;
+  std::cout<<"Global time to execute traj : "<<Global_time_traj<<" s "<<std::endl;
+
+
+  /* Wait for MoveGroup to receive and process the attached collision object message */
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
 
 
 
