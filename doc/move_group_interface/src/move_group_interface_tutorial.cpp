@@ -45,6 +45,8 @@
 
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
+#include <chrono>
+
 
 // The circle constant tau = 2*pi. One tau is one rotation in radians.
 const double tau = 2 * M_PI;
@@ -193,9 +195,9 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
 
 
-  std::string planner_id = "RRTstar";
+  std::string planner_id = "RRTconnect";
   move_group_interface.setPlannerId(planner_id);
-  move_group_interface.setPlanningTime(10);
+  move_group_interface.setPlanningTime(60);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -225,8 +227,18 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
   bool success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+
   ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
+
+  std::cout<< "TIME TO FIND THE PATH : " << my_plan.planning_time_ <<std::endl;
+
+  std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
   move_group_interface.execute(my_plan);
+  std::chrono::high_resolution_clock::time_point end_traj = std::chrono::high_resolution_clock::now();
+
+  std::cout<< "TIME TO EXECUTE TRAJ : " << std::chrono::duration_cast<std::chrono::microseconds>(end_traj-begin_traj).count()/1000000.0 <<std::endl;
+
 
 
 
@@ -242,7 +254,8 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   trajecto_state.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions);
   int number_joint = 7;
 
-  for (int i =0 ; i< number_joint  ; i++ ){
+  for (int i =0 ; i< number_joint  ; i++ )
+  {
     std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
   }
   //std::cout << "test std::cout" << trajecto_state.getWayPoint(5) << std::endl;  //trajecto_state.getWayPointCount()
@@ -413,276 +426,152 @@ int main(int argc, char** argv)
   visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
 
 
-  geometry_msgs::Pose bari_pose;
-  bari_pose.orientation.x = 0.93373;
-  bari_pose.orientation.y = -0.35765;
-  bari_pose.orientation.z = 0.0057657;
-  bari_pose.orientation.w = 0.014457;
+  int N_bari_x = 2;
+  int N_bari_y = 4;
+  int N_bari_z = 1;
+  for (int xi = 0; xi< N_bari_x;xi++){
+    for (int yi = 0; yi< N_bari_y;yi++){
+      for (int zi = 0; zi< N_bari_z;zi++){
 
-  bari_pose.position.x = 0.49;
-  bari_pose.position.y = -0.090119;
-  bari_pose.position.z = 0.53731+0.1;
 
 
-  visual_tools.deleteAllMarkers();
-  visual_tools.publishText(text_pose, " current : show bari position", rvt::WHITE, rvt::XLARGE);
-  visual_tools.publishAxisLabeled(bari_pose, "bari_pose");
-  visual_tools.trigger(); // to apply changes
+      geometry_msgs::Pose bari_pose;
+      bari_pose.orientation.x = 0.93373;
+      bari_pose.orientation.y = -0.35765;
+      bari_pose.orientation.z = 0.0057657;
+      bari_pose.orientation.w = 0.014457;
 
 
 
+      bari_pose.position.x = 0.5+ 0.04*xi;
+      bari_pose.position.y = -0.05+ 0.05*yi;
+      bari_pose.position.z = 0.53731+0.3;
 
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
+      visual_tools.deleteAllMarkers();
+      visual_tools.publishText(text_pose, " current : show bari position", rvt::WHITE, rvt::XLARGE);
+      visual_tools.publishAxisLabeled(bari_pose, "bari_pose");
+      visual_tools.trigger(); // to apply changes
 
 
 
 
 
-  move_group_interface.setStartState(*move_group_interface.getCurrentState());
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
 
-  std::vector<double> traj2 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group);
 
-  visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
-  visual_tools.trigger();
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+      move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
 
 
 
+      std::vector<double> traj2 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group);
 
+      visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+      visual_tools.trigger();
 
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
 
 
+      // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
+      // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
+      ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", yi + N_bari_y*xi);
 
+      move_group_interface.attachObject(collision_object_baris[yi + N_bari_y*xi].id, "link_tool");
 
+      visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
+      visual_tools.trigger();
 
-  // // Planning to a Pose goal
-  // // ^^^^^^^^^^^^^^^^^^^^^^^
-  // // We can plan a motion for this group (robot) to a desired pose for the
-  // // end-effector.
-  // move_group_interface.setStartState(*move_group_interface.getCurrentState());
-  // geometry_msgs::Pose target_pose_test;
-  // target_pose_test.orientation.x = 1.0;
-  // target_pose_test.position.x = 0.28;
-  // target_pose_test.position.y = -0.35;
-  // target_pose_test.position.z = 0.0;
-  // move_group_interface.setPoseTarget(target_pose_test);
 
-  // // Now, we call the planner to compute the plan and visualize it.
-  // // Note that we are just planning, not asking move_group_interface
-  // // to actually move the robot.
-  // //moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
-  // success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
-  // ROS_INFO_NAMED("tutorial", "go to bari %s", success ? "" : "FAILED");
 
-  // // Visualizing plans
-  // // ^^^^^^^^^^^^^^^^^
-  // // We can also visualize the plan as a line with markers in RViz.
-  // ROS_INFO_NAMED("tutorial", "Visualizing plan 1 as trajectory line");
-  // visual_tools.publishAxisLabeled(target_pose_test, "target_pose");
-  // visual_tools.publishText(text_pose, "Pose Goal", rvt::WHITE, rvt::XLARGE);
-  // visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
-  // visual_tools.trigger();
 
+      /* Wait for MoveGroup to receive and process the attached collision object message */
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
 
 
 
 
-  // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to continue the demo");
+      geometry_msgs::Pose target_pose_final;
+      target_pose_final.orientation.x = 1.0;
+      target_pose_final.position.x = 0.28 + 0.08*xi;;
+      target_pose_final.position.y = +0.35 + 0.1*yi;
+      target_pose_final.position.z = 0.0;
+      move_group_interface.setPoseTarget(target_pose_final);
 
 
+      visual_tools.deleteAllMarkers();
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rvt::WHITE, rvt::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose_final, "target_pose_final");
+      visual_tools.trigger(); // to apply changes
 
 
 
 
 
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
 
 
+      // Replan, but now with the object in hand.
+      move_group_interface.setStartStateToCurrentState();
 
-  // The result may look like this:
-  //
-  // .. image:: ./move_group_interface_tutorial_avoid_path.gif
-  //    :alt: animation showing the arm moving avoiding the new obstacle
-  //
-  // Attaching objects to the robot
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // You can attach objects to the robot, so that it moves with the robot geometry.
-  // This simulates picking up the object for the purpose of manipulating it.
-  // The motion planning should avoid collisions between the two objects as well.
-  // moveit_msgs::CollisionObject object_to_attach;
-  // object_to_attach.id = "cylinder1";
 
-  // shape_msgs::SolidPrimitive cylinder_primitive;
-  // cylinder_primitive.type = primitive.CYLINDER;
-  // cylinder_primitive.dimensions.resize(2);
-  // cylinder_primitive.dimensions[primitive.CYLINDER_HEIGHT] = 0.20;
-  // cylinder_primitive.dimensions[primitive.CYLINDER_RADIUS] = 0.04;
 
-  // // We define the frame/pose for this cylinder so that it appears in the gripper
-  // object_to_attach.header.frame_id = move_group_interface.getEndEffectorLink();
-  // geometry_msgs::Pose grab_pose;
-  // grab_pose.orientation.w = 1.0;
-  // grab_pose.position.z = 0.2;
+      std::vector<double> traj3 = go_to_position(move_group_interface, target_pose_final, visual_tools, joint_model_group);
 
-  // collision_object_baris
+      visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+      visual_tools.trigger();
 
-  // // First, we add the object to the world (without using a vector)
-  // object_to_attach.primitives.push_back(cylinder_primitive);
-  // object_to_attach.primitive_poses.push_back(grab_pose);
-  // object_to_attach.operation = object_to_attach.ADD;
-  // planning_scene_interface.applyCollisionObject(object_to_attach);
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-  // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-  ROS_INFO_NAMED("tutorial", "Attach the object to the robot");
 
-  move_group_interface.attachObject(collision_object_baris[0].id, "link_tool");
 
-  visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
-  visual_tools.trigger();
 
 
+      // The result may look something like this:
+      //
+      // .. image:: ./move_group_interface_tutorial_attached_object.gif
+      //    :alt: animation showing the arm moving differently once the object is attached
+      //
+      // Detaching and Removing Objects
+      // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      //
+      // Now, let's detach the cylinder from the robot's gripper.
+      ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", yi + N_bari_y*xi);
+      move_group_interface.detachObject(collision_object_baris[yi + N_bari_y*xi].id);
 
+      // Show text in RViz of status
+      visual_tools.deleteAllMarkers();
+      visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
+      visual_tools.trigger();
 
 
+      /* Wait for MoveGroup to receive and process the attached collision object message */
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
 
-  /* Wait for MoveGroup to receive and process the attached collision object message */
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
+      
+    }
+  }
 
+}
 
 
 
 
-  geometry_msgs::Pose target_pose_final;
-  target_pose_final.orientation.x = 1.0;
-  target_pose_final.position.x = 0.28;
-  target_pose_final.position.y = +0.35;
-  target_pose_final.position.z = 0.0;
-  move_group_interface.setPoseTarget(target_pose_final);
-
-
-  visual_tools.deleteAllMarkers();
-  visual_tools.publishText(text_pose, " current : show target_pose_final", rvt::WHITE, rvt::XLARGE);
-  visual_tools.publishAxisLabeled(target_pose_final, "target_pose_final");
-  visual_tools.trigger(); // to apply changes
-
-
-
-
-
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-
-  // Replan, but now with the object in hand.
-  move_group_interface.setStartStateToCurrentState();
-
-
-
-  std::vector<double> traj3 = go_to_position(move_group_interface, target_pose_final, visual_tools, joint_model_group);
-
-  visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
-  visual_tools.trigger();
-
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-
-  // The result may look something like this:
-  //
-  // .. image:: ./move_group_interface_tutorial_attached_object.gif
-  //    :alt: animation showing the arm moving differently once the object is attached
-  //
-  // Detaching and Removing Objects
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // Now, let's detach the cylinder from the robot's gripper.
-  ROS_INFO_NAMED("tutorial", "Detach the object from the robot");
-  move_group_interface.detachObject(collision_object_baris[0].id);
-
-  // Show text in RViz of status
-  visual_tools.deleteAllMarkers();
-  visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
-  visual_tools.trigger();
-
-
-
-
-
-//  // Planning to a Pose goal
-//   // ^^^^^^^^^^^^^^^^^^^^^^^
-//   // We can plan a motion for this group (robot) to a desired pose for the
-//   // end-effector.
-//   move_group_interface.setStartState(*move_group_interface.getCurrentState());
-//   geometry_msgs::Pose target_pose_final;
-//   target_pose_final.orientation.w = 1.0;
-//   target_pose_final.position.x = 0.28;
-//   target_pose_final.position.y = +0.35;
-//   target_pose_final.position.z = 0.0;
-//   move_group_interface.setPoseTarget(target_pose_final);
-
-//   // Now, we call the planner to compute the plan and visualize it.
-//   // Note that we are just planning, not asking move_group_interface
-//   // to actually move the robot.
-//   //moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-
-//   //bool success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-
-//   // Replan, but now with the object in hand.
-//   move_group_interface.setStartStateToCurrentState();
-//   success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-//   ROS_INFO_NAMED("tutorial", "Visualizing plan 7 (move around cuboid with cylinder) %s", success ? "" : "FAILED");
-//   visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
-//   visual_tools.trigger();
-//   visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the plan is complete");
-
-
-
-//  move_group_interface.execute(my_plan);
-
-  // // Visualizing plans
-  // // ^^^^^^^^^^^^^^^^^
-  // // We can also visualize the plan as a line with markers in RViz.
-  // ROS_INFO_NAMED("tutorial", "Visualizing plan 1 as trajectory line");
-  // visual_tools.publishAxisLabeled(target_pose_final, "target_pose");
-  // visual_tools.publishText(text_pose, "Pose Goal", rvt::WHITE, rvt::XLARGE);
-  // visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
-  // visual_tools.trigger();
-  // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to continue the demo");
-
-
-
-
-
-
-
-
-
-
-  /* Wait for MoveGroup to receive and process the attached collision object message */
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
 
   // Now, let's remove the objects from the world.
   ROS_INFO_NAMED("tutorial", "Remove the objects from the world");
