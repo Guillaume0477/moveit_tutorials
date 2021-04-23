@@ -156,6 +156,23 @@ void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &pl
   collision_object_bari.mesh_poses.push_back(pose);
   collision_object_bari.operation = collision_object_bari.ADD;
 
+  // shape_msgs::SolidPrimitive work_box;
+  // work_box.type = work_box.BOX;
+  // work_box.dimensions.resize(3);
+  // work_box.dimensions[work_box.BOX_X] = 0.60; 
+  // work_box.dimensions[work_box.BOX_Y] = 1.0; 
+  // work_box.dimensions[work_box.BOX_Z] = 0.6; 
+
+  // geometry_msgs::Pose work_box_pose;
+  // work_box_pose.orientation.w = 1.0;
+  // work_box_pose.position.x = 0.5;
+  // work_box_pose.position.y = 0.155;
+  // work_box_pose.position.z = 0.3;
+
+  // collision_object_bari.primitives.push_back(work_box);
+  // collision_object_bari.primitive_poses.push_back(work_box_pose);
+  // collision_object_bari.operation = collision_object_bari.ADD;
+
   collision_object_baris.push_back(collision_object_bari);
 
   // Now, let's add the collision object into the world
@@ -166,6 +183,156 @@ void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &pl
 
 }
 
+
+double distance(double x1, double y1, double z1, double x2, double y2, double z2){
+
+  return sqrt(pow(x1-x2,2)+pow(y1-y2,2)+pow(z1-z2,2));
+
+}
+
+std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
+  
+
+    // - AnytimePathShortening
+    // - SBL
+    // - EST
+    // - LBKPIECE
+    // - BKPIECE
+    // - KPIECE
+    // - RRT
+    // - RRTConnect
+    // - RRTstar
+    // - TRRT
+    // - PRM
+    // - PRMstar
+    // - FMT
+    // - BFMT
+    // - PDST
+    // - STRIDE
+    // - BiTRRT
+    // - LBTRRT
+    // - BiEST
+    // - ProjEST
+    // - LazyPRM
+    // - LazyPRMstar
+    // - SPARS
+    // - SPARStwo
+    // - PersistentLazyPRMstar
+    // - PersistentLazyPRM
+    // - SemiPersistentLazyPRMstar
+    // - SemiPersistentLazyPRM
+
+
+
+  std::string planner_id = "RRTConnect";
+  move_group_interface.setPlannerId(planner_id);
+  move_group_interface.setPlanningTime(10);
+  /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
+      Allowed values are in (0,1]. The maximum joint velocity specified
+      in the robot model is multiplied by the factor. If the value is 0, it is set to
+      the default value, which is defined in joint_limits.yaml of the moveit_config.
+      If the value is greater than 1, it is set to 1.0. */
+  move_group_interface.setMaxVelocityScalingFactor(1.0);
+
+  /** \brief Set a scaling factor for optionally reducing the maximum joint acceleration.
+      Allowed values are in (0,1]. The maximum joint acceleration specified
+      in the robot model is multiplied by the factor. If the value is 0, it is set to
+      the default value, which is defined in joint_limits.yaml of the moveit_config.
+      If the value is greater than 1, it is set to 1.0. */
+  move_group_interface.setMaxAccelerationScalingFactor(1.0);
+
+
+  std::string planner_test = move_group_interface.getPlannerId();
+  std::string pipeline_test = move_group_interface.getPlanningPipelineId();
+  std::cout<<"getPlannerId : "<<planner_test<<std::endl;
+  std::cout<<"getPipeline : "<<pipeline_test<<std::endl;
+
+  //std::cout<<planner_test*<<std::endl;
+
+
+
+  move_group_interface.setPoseTarget(target_pose);
+  // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
+  // void getJointValueTarget(std::vector<double>& group_variable_values) const;
+
+
+
+  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+
+  bool success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+
+  ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
+
+  double time_find_plan = my_plan.planning_time_;
+
+  Global_time_find_planning += time_find_plan;
+
+  std::cout<< "TIME TO FIND THE PATH : " << time_find_plan <<std::endl;
+
+  std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
+  move_group_interface.execute(my_plan);
+  std::chrono::high_resolution_clock::time_point end_traj = std::chrono::high_resolution_clock::now();
+
+  double time_traj = std::chrono::duration_cast<std::chrono::microseconds>(end_traj-begin_traj).count()/1000000.0;
+
+  Global_time_traj += time_traj;
+
+  std::cout<< "TIME TO EXECUTE TRAJ : " << time_traj <<std::endl;
+
+
+
+
+
+  robot_trajectory::RobotTrajectory trajecto_state(move_group_interface.getCurrentState()->getRobotModel(), move_group_interface.getName());
+
+  trajecto_state.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), my_plan.trajectory_);
+
+  double size_traj = trajecto_state.getWayPointCount();
+
+  ROS_INFO_NAMED("trajectory print : ", " test size : %f ", size_traj  );
+
+  Global_nb_step_traj += size_traj;
+
+  // Next get the current set of joint values for the group.
+  std::vector<double> joint_group_positions;
+  trajecto_state.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions);
+  int number_joint = 7;
+
+  for (int i =0 ; i< number_joint  ; i++ )
+  {
+    std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
+  }
+  //std::cout << "test std::cout" << trajecto_state.getWayPoint(0).getVariablePositions << std::endl;  //trajecto_state.getWayPointCount()
+  std::cout << "test std::cout" << trajecto_state.getWayPoint(0) << std::endl;  //trajecto_state.getWayPointCount()
+
+  std::cout << "Mine:" << std::endl;
+  std::cout << "Mine:" << std::endl;
+  std::cout << "Mine:" << std::endl;
+
+  //std::cout << "Link poses:" << std::endl;
+ 
+  for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
+  {
+    const Eigen::Isometry3d transform0 =trajecto_state.getWayPoint(i-1).getGlobalLinkTransform("link_finger1");
+    const Eigen::Isometry3d transform1 =trajecto_state.getWayPoint(i).getGlobalLinkTransform("link_finger1");
+
+    ASSERT_ISOMETRY(transform0)  // unsanitized input, could contain a non-isometry
+    ASSERT_ISOMETRY(transform1)
+    //Eigen::Quaterniond q(transform.linear());
+    //std::cout << "T.xyz = [" << transform.translation().x() << ", " << transform.translation().y() << ", "
+    //<< transform.translation().z() << "], Q.xyzw = [" << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w()
+    //<< "]" << std::endl;
+
+    //std::cout << "TYPE!! : "<< typeid(transform.translation()).name() << std::endl;
+
+    //double dist = distance((double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z(),(double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z()); 
+    double dist = distance((double) transform0.translation().x(),(double) transform0.translation().y(),(double) transform0.translation().z(),(double) transform1.translation().x(),(double) transform1.translation().y(),(double) transform1.translation().z()); 
+    Global_move_tool += dist;
+
+  }
+
+}
 
 std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
   
@@ -201,9 +368,26 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
 
 
-  std::string planner_id = "RRTconnect";
+  std::string planner_id = "SemiPersistentPRMstar";
   move_group_interface.setPlannerId(planner_id);
-  move_group_interface.setPlanningTime(300);
+  std::map<std::string, std::string> parametre = move_group_interface.getPlannerParams(planner_id,"arm_group");
+
+  std::map<std::string, std::string>::iterator it;
+  for (it = parametre.begin(); it != parametre.end(); it++)
+  {
+    std::cout << it->first    // string (key)
+    << " : "
+    << it->second   // string's value 
+    << std::endl;
+  }
+  std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
+  parametre["type"] = "geometric::LazyPRMstar";
+  std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
+
+  move_group_interface.setPlannerParams(planner_id, "arm_group", parametre);
+
+
+  move_group_interface.setPlanningTime(600);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -225,6 +409,43 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   //std::cout<<planner_test*<<std::endl;
 
 
+  moveit_msgs::PositionConstraint pcm;
+  pcm.link_name = "link_tool";
+  pcm.header.frame_id = "base_link";
+  
+  shape_msgs::SolidPrimitive work_box;
+  work_box.type = work_box.BOX;
+  work_box.dimensions.resize(3);
+  work_box.dimensions[work_box.BOX_X] = 0.60; 
+  work_box.dimensions[work_box.BOX_Y] = 1.0; 
+  work_box.dimensions[work_box.BOX_Z] = 0.6; 
+
+  geometry_msgs::Pose work_box_pose;
+  work_box_pose.orientation.w = 1.0;
+  work_box_pose.position.x = 0.5;
+  work_box_pose.position.y = 0.155;
+  work_box_pose.position.z = 0.3;
+
+  pcm.constraint_region.primitives.push_back(work_box);
+  pcm.constraint_region.primitive_poses.push_back(work_box_pose);
+  pcm.weight = 1.0;
+
+  moveit_msgs::OrientationConstraint ocm;
+  ocm.link_name = "link_6";
+  ocm.header.frame_id = "base_link";
+  ocm.orientation = target_pose.orientation;
+  ocm.absolute_x_axis_tolerance = 1.0; //60 degre abs
+  ocm.absolute_y_axis_tolerance = 1.0;
+  ocm.absolute_z_axis_tolerance = 10.0;
+  ocm.weight = 1.0;
+ 
+  moveit_msgs::Constraints test_constraints;
+  test_constraints.orientation_constraints.push_back(ocm);
+  test_constraints.position_constraints.push_back(pcm);
+  move_group_interface.setPathConstraints(test_constraints);
+
+
+
   move_group_interface.setPoseTarget(target_pose);
   // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
   // void getJointValueTarget(std::vector<double>& group_variable_values) const;
@@ -232,7 +453,21 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
-  bool success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+  bool success = false;
+  for (int i=0; i < 10 ;i++){
+    success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    if (success) {
+      break;
+    }
+    else {
+      std::cout << "TRY AGAIN : " << i << std::endl;
+    }
+  }
+
+  if (!success) {
+    std::cerr << "FAIL TO FINF A PATH AFTER 10 TRY AGAIN" << std::endl;
+    exit(0);
+  }
 
 
   ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
@@ -261,7 +496,11 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   trajecto_state.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), my_plan.trajectory_);
 
-  //ROS_INFO_NAMED("trajectory print : ", " test size : %d ", trajecto_state.getWayPointCount() );
+  double size_traj = trajecto_state.getWayPointCount();
+
+  ROS_INFO_NAMED("trajectory print : ", " test size : %f ", size_traj  );
+
+  Global_nb_step_traj += size_traj;
 
   // Next get the current set of joint values for the group.
   std::vector<double> joint_group_positions;
@@ -272,10 +511,73 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   {
     std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
   }
-  //std::cout << "test std::cout" << trajecto_state.getWayPoint(5) << std::endl;  //trajecto_state.getWayPointCount()
+  //std::cout << "test std::cout" << trajecto_state.getWayPoint(0).getVariablePositions << std::endl;  //trajecto_state.getWayPointCount()
+  std::cout << "test std::cout" << trajecto_state.getWayPoint(0) << std::endl;  //trajecto_state.getWayPointCount()
+
+  std::cout << "Mine:" << std::endl;
+  std::cout << "Mine:" << std::endl;
+  std::cout << "Mine:" << std::endl;
+
+  //std::cout << "Link poses:" << std::endl;
+
+  EigenSTL::vector_Vector3d path;
+
+ 
+  for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
+  {
+    const Eigen::Isometry3d transform0 =trajecto_state.getWayPoint(i-1).getGlobalLinkTransform("link_finger1");
+    const Eigen::Isometry3d transform1 =trajecto_state.getWayPoint(i).getGlobalLinkTransform("link_finger1");
+
+    ASSERT_ISOMETRY(transform0)  // unsanitized input, could contain a non-isometry
+    ASSERT_ISOMETRY(transform1)
+
+    path.push_back(transform0.translation());
+    visual_tools.publishSphere(transform0, rviz_visual_tools::GREEN, rviz_visual_tools::MEDIUM);
+    //Eigen::Quaterniond q(transform.linear());
+    //std::cout << "T.xyz = [" << transform.translation().x() << ", " << transform.translation().y() << ", "
+    //<< transform.translation().z() << "], Q.xyzw = [" << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w()
+    //<< "]" << std::endl;
+
+    //std::cout << "TYPE!! : "<< typeid(transform.translation()).name() << std::endl;
+
+    //double dist = distance((double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z(),(double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z()); 
+    double dist = distance((double) transform0.translation().x(),(double) transform0.translation().y(),(double) transform0.translation().z(),(double) transform1.translation().x(),(double) transform1.translation().y(),(double) transform1.translation().z()); 
+    Global_move_tool += dist;
+
+  }
+
+  const double radius = 0.005;
+  visual_tools.publishPath(path, rviz_visual_tools::GREEN, radius);
 
 
+  // // Point location datastructure
+  // EigenSTL::vector_Vector3d path;
+
+  // // Visualize end effector position of cartesian path
+  // for (std::size_t i = 0; i < robot_trajectory.getWayPointCount(); ++i)
+  // {
+  //   const Eigen::Isometry3d& tip_pose = robot_trajectory.getWayPoint(i).getGlobalLinkTransform(ee_parent_link);
+
+  //   // Error Check
+  //   if (tip_pose.translation().x() != tip_pose.translation().x())
+  //   {
+  //     ROS_ERROR_STREAM_NAMED(LOGNAME, "NAN DETECTED AT TRAJECTORY POINT i=" << i);
+  //     return false;
+  //   }
+
+  //   path.push_back(tip_pose.translation());
+  //   publishSphere(tip_pose, color, rviz_visual_tools::MEDIUM);
+  // }
+
+  // const double radius = 0.005;
+  // publishPath(path, color, radius);
+
+  // return true;
+
+  visual_tools.publishCollisionCuboid(work_box_pose, work_box.dimensions[work_box.BOX_X], work_box.dimensions[work_box.BOX_Y], work_box.dimensions[work_box.BOX_Z], std::string("cube_work_space"), rviz_visual_tools::GREEN );
   visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
 
 
   return joint_group_positions;
@@ -388,7 +690,10 @@ int main(int argc, char** argv)
   // First let's plan to another simple goal with no objects in the way.
 
   geometry_msgs::Pose scan_pose;
-  scan_pose.orientation.x = 1.0;
+  scan_pose.orientation.x = 0.93373;
+  scan_pose.orientation.y = -0.35765;
+  scan_pose.orientation.z = 0.0057657;
+  scan_pose.orientation.w = 0.014457;
   scan_pose.position.x = 0.75;
   scan_pose.position.y = 0.0;
   scan_pose.position.z = 0.5;
@@ -410,7 +715,7 @@ int main(int argc, char** argv)
   move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
 
-  std::vector<double> traj1 = go_to_position(move_group_interface, scan_pose, visual_tools, joint_model_group);
+  std::vector<double> traj1 = go_to_position_begin(move_group_interface, scan_pose, visual_tools, joint_model_group);
 
   visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
   visual_tools.trigger();
@@ -427,8 +732,8 @@ int main(int argc, char** argv)
   load_carton_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
-  std::chrono::seconds dura(30);
-  std::this_thread::sleep_for(dura);
+  std::chrono::seconds dura50(50);
+  std::this_thread::sleep_for(dura50);
 
   // Now, let's add the collision object into the world
   // (using a vector that could contain additional objects)
@@ -445,7 +750,7 @@ int main(int argc, char** argv)
 
 
   int N_bari_x = 2;
-  int N_bari_y = 4;
+  int N_bari_y = 1;
   int N_bari_z = 1;
   for (int xi = 0; xi< N_bari_x;xi++){
     for (int yi = 0; yi< N_bari_y;yi++){
@@ -508,8 +813,8 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
-      std::chrono::seconds dura2(10);
-      std::this_thread::sleep_for(dura2);
+      //std::chrono::seconds dura10(10);
+      std::this_thread::sleep_for(dura50);
 
 
 
@@ -525,7 +830,10 @@ int main(int argc, char** argv)
 
 
       geometry_msgs::Pose target_pose_final;
-      target_pose_final.orientation.x = 1.0;
+      target_pose_final.orientation.x = 0.93373;
+      target_pose_final.orientation.y = -0.35765;
+      target_pose_final.orientation.z = 0.0057657;
+      target_pose_final.orientation.w = 0.014457;
       target_pose_final.position.x = 0.28 + 0.08*xi;;
       target_pose_final.position.y = +0.35 + 0.1*yi;
       target_pose_final.position.z = 0.0;
@@ -580,7 +888,7 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
-      std::this_thread::sleep_for(dura2);
+      std::this_thread::sleep_for(dura50);
 
       /* Wait for MoveGroup to receive and process the attached collision object message */
       //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
@@ -595,6 +903,8 @@ int main(int argc, char** argv)
 
   std::cout<<"Global time to find plan : "<<Global_time_find_planning<<" s "<<std::endl;
   std::cout<<"Global time to execute traj : "<<Global_time_traj<<" s "<<std::endl;
+  std::cout<<"Global nb of step in the traj : "<<Global_nb_step_traj<<std::endl;
+  std::cout<<"Global move of the tool : "<<Global_move_tool<<std::endl;
 
 
   /* Wait for MoveGroup to receive and process the attached collision object message */
