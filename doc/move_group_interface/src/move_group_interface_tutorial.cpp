@@ -56,6 +56,7 @@ double Global_time_find_planning = 0;
 double Global_time_traj = 0;
 double Global_nb_step_traj = 0;
 double Global_move_tool = 0;
+double NUM_TRAJ = 0;
 
 
 void load_bari_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
@@ -161,13 +162,14 @@ void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &pl
   // work_box.dimensions.resize(3);
   // work_box.dimensions[work_box.BOX_X] = 0.60; 
   // work_box.dimensions[work_box.BOX_Y] = 1.0; 
-  // work_box.dimensions[work_box.BOX_Z] = 0.6; 
+  // work_box.dimensions[work_box.BOX_Z] = 0.9; 
 
   // geometry_msgs::Pose work_box_pose;
   // work_box_pose.orientation.w = 1.0;
   // work_box_pose.position.x = 0.5;
   // work_box_pose.position.y = 0.155;
-  // work_box_pose.position.z = 0.3;
+  // work_box_pose.position.z = 0.45;
+
 
   // collision_object_bari.primitives.push_back(work_box);
   // collision_object_bari.primitive_poses.push_back(work_box_pose);
@@ -224,9 +226,9 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
 
 
 
-  std::string planner_id = "RRTConnect";
+  std::string planner_id = "RRTconnect";
   move_group_interface.setPlannerId(planner_id);
-  move_group_interface.setPlanningTime(10);
+  move_group_interface.setPlanningTime(50);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -266,8 +268,6 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
 
   double time_find_plan = my_plan.planning_time_;
 
-  Global_time_find_planning += time_find_plan;
-
   std::cout<< "TIME TO FIND THE PATH : " << time_find_plan <<std::endl;
 
   std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
@@ -275,8 +275,6 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   std::chrono::high_resolution_clock::time_point end_traj = std::chrono::high_resolution_clock::now();
 
   double time_traj = std::chrono::duration_cast<std::chrono::microseconds>(end_traj-begin_traj).count()/1000000.0;
-
-  Global_time_traj += time_traj;
 
   std::cout<< "TIME TO EXECUTE TRAJ : " << time_traj <<std::endl;
 
@@ -291,8 +289,6 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   double size_traj = trajecto_state.getWayPointCount();
 
   ROS_INFO_NAMED("trajectory print : ", " test size : %f ", size_traj  );
-
-  Global_nb_step_traj += size_traj;
 
   // Next get the current set of joint values for the group.
   std::vector<double> joint_group_positions;
@@ -328,14 +324,16 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
 
     //double dist = distance((double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z(),(double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z()); 
     double dist = distance((double) transform0.translation().x(),(double) transform0.translation().y(),(double) transform0.translation().z(),(double) transform1.translation().x(),(double) transform1.translation().y(),(double) transform1.translation().z()); 
-    Global_move_tool += dist;
+
 
   }
-
+  return joint_group_positions;
 }
 
 std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
   
+
+  NUM_TRAJ += 1;
 
     // - AnytimePathShortening
     // - SBL
@@ -387,7 +385,7 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   move_group_interface.setPlannerParams(planner_id, "arm_group", parametre);
 
 
-  move_group_interface.setPlanningTime(600);
+  move_group_interface.setPlanningTime(100);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -418,13 +416,13 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   work_box.dimensions.resize(3);
   work_box.dimensions[work_box.BOX_X] = 0.60; 
   work_box.dimensions[work_box.BOX_Y] = 1.0; 
-  work_box.dimensions[work_box.BOX_Z] = 0.6; 
+  work_box.dimensions[work_box.BOX_Z] = 0.9; 
 
   geometry_msgs::Pose work_box_pose;
   work_box_pose.orientation.w = 1.0;
   work_box_pose.position.x = 0.5;
   work_box_pose.position.y = 0.155;
-  work_box_pose.position.z = 0.3;
+  work_box_pose.position.z = 0.45;
 
   pcm.constraint_region.primitives.push_back(work_box);
   pcm.constraint_region.primitive_poses.push_back(work_box_pose);
@@ -433,9 +431,12 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   moveit_msgs::OrientationConstraint ocm;
   ocm.link_name = "link_6";
   ocm.header.frame_id = "base_link";
-  ocm.orientation = target_pose.orientation;
-  ocm.absolute_x_axis_tolerance = 1.0; //60 degre abs
-  ocm.absolute_y_axis_tolerance = 1.0;
+  ocm.orientation.x = 0.93373;
+  ocm.orientation.y = -0.35765;
+  ocm.orientation.z = 0.0057657;
+  ocm.orientation.w = 0.014457;
+  ocm.absolute_x_axis_tolerance = 2.0; //90 degre abs
+  ocm.absolute_y_axis_tolerance = 2.0;
   ocm.absolute_z_axis_tolerance = 10.0;
   ocm.weight = 1.0;
  
@@ -452,16 +453,20 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
 
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-
+  
+  double local_time_find_plan = 0;
   bool success = false;
   for (int i=0; i < 10 ;i++){
     success = (move_group_interface.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    local_time_find_plan += my_plan.planning_time_;
+    
     if (success) {
       break;
     }
     else {
       std::cout << "TRY AGAIN : " << i << std::endl;
     }
+
   }
 
   if (!success) {
@@ -472,11 +477,14 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   ROS_INFO_NAMED("tutorial", " Go to scan position %s", success ? "" : "FAILED");
 
-  double time_find_plan = my_plan.planning_time_;
+  Global_time_find_planning += local_time_find_plan;
 
-  Global_time_find_planning += time_find_plan;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "TIME TO FIND THE PATH " << NUM_TRAJ << " : " << local_time_find_plan << " s" << std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
 
-  std::cout<< "TIME TO FIND THE PATH : " << time_find_plan <<std::endl;
 
   std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
   move_group_interface.execute(my_plan);
@@ -486,8 +494,12 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   Global_time_traj += time_traj;
 
-  std::cout<< "TIME TO EXECUTE TRAJ : " << time_traj <<std::endl;
 
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "TIME TO EXECUTE TRAJ " << NUM_TRAJ << " : " << time_traj << " s" <<std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
 
 
 
@@ -501,6 +513,13 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   ROS_INFO_NAMED("trajectory print : ", " test size : %f ", size_traj  );
 
   Global_nb_step_traj += size_traj;
+
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "NB STEP TRAJ " << NUM_TRAJ << " : " << size_traj <<std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
+
 
   // Next get the current set of joint values for the group.
   std::vector<double> joint_group_positions;
@@ -522,6 +541,7 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   EigenSTL::vector_Vector3d path;
 
+  double local_move_tool = 0;
  
   for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
   {
@@ -543,8 +563,17 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
     //double dist = distance((double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z(),(double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z()); 
     double dist = distance((double) transform0.translation().x(),(double) transform0.translation().y(),(double) transform0.translation().z(),(double) transform1.translation().x(),(double) transform1.translation().y(),(double) transform1.translation().z()); 
     Global_move_tool += dist;
+    local_move_tool += dist;
 
   }
+
+
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "DIST TOOL FOR TRAJ " << NUM_TRAJ << " : " << local_move_tool << "m" <<std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
+
 
   const double radius = 0.005;
   visual_tools.publishPath(path, rviz_visual_tools::GREEN, radius);
@@ -690,14 +719,20 @@ int main(int argc, char** argv)
   // First let's plan to another simple goal with no objects in the way.
 
   geometry_msgs::Pose scan_pose;
-  scan_pose.orientation.x = 0.93373;
-  scan_pose.orientation.y = -0.35765;
-  scan_pose.orientation.z = 0.0057657;
-  scan_pose.orientation.w = 0.014457;
-  scan_pose.position.x = 0.75;
-  scan_pose.position.y = 0.0;
-  scan_pose.position.z = 0.5;
-
+  // scan_pose.orientation.x = 0.93373;
+  // scan_pose.orientation.y = -0.35765;
+  // scan_pose.orientation.z = 0.0057657;
+  // scan_pose.orientation.w = 0.014457;
+  // scan_pose.position.x = 0.75;
+  // scan_pose.position.y = 0.0;
+  // scan_pose.position.z = 0.5;
+  scan_pose.orientation.x = -0.65663;
+  scan_pose.orientation.y = 0.25469;
+  scan_pose.orientation.z = 0.25726;
+  scan_pose.orientation.w = 0.66166;
+  scan_pose.position.x = 0.48;
+  scan_pose.position.y = -0.05;
+  scan_pose.position.z = 0.51;
 
   visual_tools.deleteAllMarkers();
   visual_tools.publishText(text_pose, " current : show scan position", rvt::WHITE, rvt::XLARGE);
@@ -750,10 +785,10 @@ int main(int argc, char** argv)
 
 
   int N_bari_x = 2;
-  int N_bari_y = 1;
+  int N_bari_y = 4;
   int N_bari_z = 1;
   for (int xi = 0; xi< N_bari_x;xi++){
-    for (int yi = 0; yi< N_bari_y;yi++){
+    for (int yi = 0; yi< 1;yi++){
       for (int zi = 0; zi< N_bari_z;zi++){
 
 
@@ -810,11 +845,13 @@ int main(int argc, char** argv)
 
       move_group_interface.attachObject(collision_object_baris[yi + N_bari_y*xi].id, "link_tool");
 
+      std::this_thread::sleep_for(dura50);
+
+
       visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
       //std::chrono::seconds dura10(10);
-      std::this_thread::sleep_for(dura50);
 
 
 
@@ -834,9 +871,9 @@ int main(int argc, char** argv)
       target_pose_final.orientation.y = -0.35765;
       target_pose_final.orientation.z = 0.0057657;
       target_pose_final.orientation.w = 0.014457;
-      target_pose_final.position.x = 0.28 + 0.08*xi;;
+      target_pose_final.position.x = 0.45 + 0.08*xi;;
       target_pose_final.position.y = +0.35 + 0.1*yi;
-      target_pose_final.position.z = 0.0;
+      target_pose_final.position.z = 0.5;
       move_group_interface.setPoseTarget(target_pose_final);
 
 
@@ -869,6 +906,7 @@ int main(int argc, char** argv)
 
 
 
+      std::this_thread::sleep_for(dura50);
 
 
       // The result may look something like this:
@@ -888,7 +926,6 @@ int main(int argc, char** argv)
       visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
 
-      std::this_thread::sleep_for(dura50);
 
       /* Wait for MoveGroup to receive and process the attached collision object message */
       //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
@@ -900,12 +937,14 @@ int main(int argc, char** argv)
 
 }
 
-
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
   std::cout<<"Global time to find plan : "<<Global_time_find_planning<<" s "<<std::endl;
   std::cout<<"Global time to execute traj : "<<Global_time_traj<<" s "<<std::endl;
   std::cout<<"Global nb of step in the traj : "<<Global_nb_step_traj<<std::endl;
-  std::cout<<"Global move of the tool : "<<Global_move_tool<<std::endl;
-
+  std::cout<<"Global move of the tool : "<<Global_move_tool<< " m"<<std::endl;
+  std::cout<< "###########" << std::endl;
+  std::cout<< "###########" << std::endl;
 
   /* Wait for MoveGroup to receive and process the attached collision object message */
   visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
