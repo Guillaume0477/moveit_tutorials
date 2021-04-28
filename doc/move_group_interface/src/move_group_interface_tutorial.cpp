@@ -385,7 +385,7 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   move_group_interface.setPlannerParams(planner_id, "arm_group", parametre);
 
 
-  move_group_interface.setPlanningTime(100);
+  move_group_interface.setPlanningTime(300);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -603,7 +603,6 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
 
   // return true;
 
-  visual_tools.publishCollisionCuboid(work_box_pose, work_box.dimensions[work_box.BOX_X], work_box.dimensions[work_box.BOX_Y], work_box.dimensions[work_box.BOX_Z], std::string("cube_work_space"), rviz_visual_tools::GREEN );
   visual_tools.publishTrajectoryLine(my_plan.trajectory_, joint_model_group);
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -612,6 +611,8 @@ std::vector<double> go_to_position(moveit::planning_interface::MoveGroupInterfac
   return joint_group_positions;
 }
 
+
+//void go_to_final_from_bari
 
 
 
@@ -705,8 +706,6 @@ int main(int argc, char** argv)
 
 
 
-
-
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
@@ -740,11 +739,61 @@ int main(int argc, char** argv)
   visual_tools.trigger(); // to apply changes
 
 
+  std::vector<geometry_msgs::Pose> bari_poses;
+  std::vector<geometry_msgs::Pose> final_poses;
 
+
+  int N_bari_x = 2;
+  int N_bari_y = 4;
+  int N_bari_z = 1;
+  for (int xi = 0; xi< N_bari_x;xi++){
+    for (int yi = 0; yi< N_bari_y;yi++){
+      for (int zi = 0; zi< N_bari_z;zi++){
+
+
+        geometry_msgs::Pose target_pose_final;
+        // target_pose_final.orientation.x = 0.93373;
+        // target_pose_final.orientation.y = -0.35765;
+        // target_pose_final.orientation.z = 0.0057657;
+        // target_pose_final.orientation.w = 0.014457;
+        // target_pose_final.position.x = 0.45 + 0.08*xi;;
+        // target_pose_final.position.y = +0.35 + 0.1*yi;
+        // target_pose_final.position.z = 0.5;
+        target_pose_final.orientation.x = -0.65663;
+        target_pose_final.orientation.y = 0.25469;
+        target_pose_final.orientation.z = 0.25726;
+        target_pose_final.orientation.w = 0.66166;
+        target_pose_final.position.x = 0.48;
+        target_pose_final.position.y = -0.05;
+        target_pose_final.position.z = 0.51;
+
+        final_poses.push_back(target_pose_final);
+
+
+        geometry_msgs::Pose bari_pose;
+        // bari_pose.orientation.x = 0.93373;
+        // bari_pose.orientation.y = -0.35765;
+        // bari_pose.orientation.z = 0.0057657;
+        // bari_pose.orientation.w = 0.014457;
+        // bari_pose.position.x = 0.5+ 0.04*xi;
+        // bari_pose.position.y = -0.05 -0.04+ 0.05*yi;
+        // bari_pose.position.z = 0.53731+0.02;
+        bari_pose.orientation.x = 0.93373;
+        bari_pose.orientation.y = -0.35765;
+        bari_pose.orientation.z = 0.0057657;
+        bari_pose.orientation.w = 0.014457;
+        bari_pose.position.x = 0.5;
+        bari_pose.position.y = -0.05 -0.04;
+        bari_pose.position.z = 0.53731+0.02;
+    
+        bari_poses.push_back(bari_pose);
+
+      }
+    }
+  }
 
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
 
 
   move_group_interface.setStartState(*move_group_interface.getCurrentState());
@@ -780,55 +829,136 @@ int main(int argc, char** argv)
   visual_tools.trigger();
 
 
-
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
 
 
-  int N_bari_x = 2;
-  int N_bari_y = 4;
-  int N_bari_z = 1;
-  for (int xi = 0; xi< N_bari_x;xi++){
-    for (int yi = 0; yi< 1;yi++){
-      for (int zi = 0; zi< N_bari_z;zi++){
 
 
-
-      geometry_msgs::Pose bari_pose;
-      bari_pose.orientation.x = 0.93373;
-      bari_pose.orientation.y = -0.35765;
-      bari_pose.orientation.z = 0.0057657;
-      bari_pose.orientation.w = 0.014457;
-
-
-
-      bari_pose.position.x = 0.5+ 0.04*xi;
-      bari_pose.position.y = -0.05 -0.04+ 0.05*yi;
-      bari_pose.position.z = 0.53731+0.02;
-
-
-
-      visual_tools.deleteAllMarkers();
-      visual_tools.publishText(text_pose, " current : show bari position", rvt::WHITE, rvt::XLARGE);
-      visual_tools.publishAxisLabeled(bari_pose, "bari_pose");
-      visual_tools.trigger(); // to apply changes
+  visual_tools.deleteAllMarkers();
+  visual_tools.publishText(text_pose, " current : show bari position", rvt::WHITE, rvt::XLARGE);
+  visual_tools.publishAxisLabeled(bari_poses[0], "bari_pose");
+  visual_tools.trigger(); // to apply changes
 
 
 
 
 
-      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
 
 
+
+  move_group_interface.setStartState(*move_group_interface.getCurrentState());
+
+
+
+
+  std::vector<double> traj2 = go_to_position(move_group_interface, bari_poses[0], visual_tools, joint_model_group);
+
+  visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+  visual_tools.trigger();
+
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+  int M = 2;
+  int N = 3;
+  for (int i = 0; i < M; i++){
+
+
+
+    // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
+    // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
+    ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i);
+
+    //move_group_interface.attachObject(collision_object_baris[i*(N+1)].id, "link_tool");
+
+    std::this_thread::sleep_for(dura50);
+
+
+
+    move_group_interface.setStartState(*move_group_interface.getCurrentState());
+
+
+
+
+    std::vector<double> traj3 = go_to_position(move_group_interface, scan_pose, visual_tools, joint_model_group);
+
+    visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+    move_group_interface.setStartState(*move_group_interface.getCurrentState());
+
+
+
+
+    std::vector<double> traj4 = go_to_position(move_group_interface, final_poses[i*(N+1)], visual_tools, joint_model_group);
+
+    visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+    std::this_thread::sleep_for(dura50);
+
+
+    // The result may look something like this:
+    //
+    // .. image:: ./move_group_interface_tutorial_attached_object.gif
+    //    :alt: animation showing the arm moving differently once the object is attached
+    //
+    // Detaching and Removing Objects
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //
+    // Now, let's detach the cylinder from the robot's gripper.
+    ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i);
+    //move_group_interface.detachObject(collision_object_baris[i].id);
+
+    // Show text in RViz of status
+    visual_tools.deleteAllMarkers();
+    visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+
+    /* Wait for MoveGroup to receive and process the attached collision object message */
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
+
+
+
+
+
+
+
+
+    for (int j = 0; j< N; j++){
+
+
+      // geometry_msgs::Pose bari_pose;
+      // bari_pose.orientation.x = 0.93373;
+      // bari_pose.orientation.y = -0.35765;
+      // bari_pose.orientation.z = 0.0057657;
+      // bari_pose.orientation.w = 0.014457;
+
+
+
+      // bari_pose.position.x = 0.5+ 0.04*xi;
+      // bari_pose.position.y = -0.05 -0.04+ 0.05*yi;
+      // bari_pose.position.z = 0.53731+0.02;
 
       move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
 
 
 
-      std::vector<double> traj2 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group);
+      std::vector<double> traj5 = go_to_position(move_group_interface, bari_poses[i*(N+1) + j + 1], visual_tools, joint_model_group);
 
       visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
@@ -839,11 +969,12 @@ int main(int argc, char** argv)
 
 
 
+
       // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
       // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-      ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", yi + N_bari_y*xi);
+      ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1) + j + 1);
 
-      move_group_interface.attachObject(collision_object_baris[yi + N_bari_y*xi].id, "link_tool");
+      //move_group_interface.attachObject(collision_object_baris[i*(N+1) + j + 1].id, "link_tool");
 
       std::this_thread::sleep_for(dura50);
 
@@ -866,20 +997,20 @@ int main(int argc, char** argv)
 
 
 
-      geometry_msgs::Pose target_pose_final;
-      target_pose_final.orientation.x = 0.93373;
-      target_pose_final.orientation.y = -0.35765;
-      target_pose_final.orientation.z = 0.0057657;
-      target_pose_final.orientation.w = 0.014457;
-      target_pose_final.position.x = 0.45 + 0.08*xi;;
-      target_pose_final.position.y = +0.35 + 0.1*yi;
-      target_pose_final.position.z = 0.5;
-      move_group_interface.setPoseTarget(target_pose_final);
+      // geometry_msgs::Pose target_pose_final;
+      // target_pose_final.orientation.x = 0.93373;
+      // target_pose_final.orientation.y = -0.35765;
+      // target_pose_final.orientation.z = 0.0057657;
+      // target_pose_final.orientation.w = 0.014457;
+      // target_pose_final.position.x = 0.45 + 0.08*xi;;
+      // target_pose_final.position.y = +0.35 + 0.1*yi;
+      // target_pose_final.position.z = 0.5;
+      // move_group_interface.setPoseTarget(target_pose_final);
 
 
       visual_tools.deleteAllMarkers();
       visual_tools.publishText(text_pose, " current : show target_pose_final", rvt::WHITE, rvt::XLARGE);
-      visual_tools.publishAxisLabeled(target_pose_final, "target_pose_final");
+      visual_tools.publishAxisLabeled(final_poses[i], "target_pose_final");
       visual_tools.trigger(); // to apply changes
 
 
@@ -897,7 +1028,7 @@ int main(int argc, char** argv)
 
 
 
-      std::vector<double> traj3 = go_to_position(move_group_interface, target_pose_final, visual_tools, joint_model_group);
+      std::vector<double> traj6 = go_to_position(move_group_interface, final_poses[i*(N+1) + j + 1], visual_tools, joint_model_group);
 
       visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
       visual_tools.trigger();
@@ -918,8 +1049,8 @@ int main(int argc, char** argv)
       // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       //
       // Now, let's detach the cylinder from the robot's gripper.
-      ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", yi + N_bari_y*xi);
-      move_group_interface.detachObject(collision_object_baris[yi + N_bari_y*xi].id);
+      ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", j);
+      //move_group_interface.detachObject(collision_object_baris[j].id);
 
       // Show text in RViz of status
       visual_tools.deleteAllMarkers();
@@ -931,11 +1062,118 @@ int main(int argc, char** argv)
       //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
 
 
-      
+
     }
+
+
+
+    move_group_interface.setStartState(*move_group_interface.getCurrentState());
+
+
+
+
+    std::vector<double> traj7 = go_to_position(move_group_interface, bari_poses[i*(N+1) + N + 1], visual_tools, joint_model_group);
+
+    visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+    // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
+    // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
+    ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1) + N + 1);
+
+    //move_group_interface.attachObject(collision_object_baris[i*(N+1) + N + 1].id, "link_tool");
+
+    std::this_thread::sleep_for(dura50);
+
+
+    visual_tools.publishText(text_pose, "Object attached to robot", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+    //std::chrono::seconds dura10(10);
+
+
+
+
+
+
+
+    /* Wait for MoveGroup to receive and process the attached collision object message */
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+
+
+
+
+    // geometry_msgs::Pose target_pose_final;
+    // target_pose_final.orientation.x = 0.93373;
+    // target_pose_final.orientation.y = -0.35765;
+    // target_pose_final.orientation.z = 0.0057657;
+    // target_pose_final.orientation.w = 0.014457;
+    // target_pose_final.position.x = 0.45 + 0.08*xi;;
+    // target_pose_final.position.y = +0.35 + 0.1*yi;
+    // target_pose_final.position.z = 0.5;
+    // move_group_interface.setPoseTarget(target_pose_final);
+
+
+    visual_tools.deleteAllMarkers();
+    visual_tools.publishText(text_pose, " current : show target_pose_final", rvt::WHITE, rvt::XLARGE);
+    visual_tools.publishAxisLabeled(final_poses[i], "target_pose_final");
+    visual_tools.trigger(); // to apply changes
+
+
+
+
+
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+
+
+    // Replan, but now with the object in hand.
+    move_group_interface.setStartStateToCurrentState();
+
+
+
+    std::vector<double> traj8 = go_to_position(move_group_interface, final_poses[i*(N+1) + N + 1], visual_tools, joint_model_group);
+
+    visual_tools.publishText(text_pose, "Go to scan position", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+    std::this_thread::sleep_for(dura50);
+
+
+    // The result may look something like this:
+    //
+    // .. image:: ./move_group_interface_tutorial_attached_object.gif
+    //    :alt: animation showing the arm moving differently once the object is attached
+    //
+    // Detaching and Removing Objects
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //
+    // Now, let's detach the cylinder from the robot's gripper.
+    ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i*(N+1) + N + 1);
+    //move_group_interface.detachObject(collision_object_baris[i*(N+1) + N + 1].id);
+
+    // Show text in RViz of status
+    visual_tools.deleteAllMarkers();
+    visual_tools.publishText(text_pose, "Object detached from robot", rvt::WHITE, rvt::XLARGE);
+    visual_tools.trigger();
+
+
+    /* Wait for MoveGroup to receive and process the attached collision object message */
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
+
+
   }
 
-}
 
   std::cout<< "###########" << std::endl;
   std::cout<< "###########" << std::endl;
