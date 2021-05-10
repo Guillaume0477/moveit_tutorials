@@ -194,7 +194,23 @@ double distance(double x1, double y1, double z1, double x2, double y2, double z2
 
 }
 
-std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupInterface &move_group_interface , geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
+double distance6D(double x1, double y1, double z1, double v1, double u1, double w1, double x2, double y2, double z2, double v2, double u2, double w2){
+
+  return sqrt(pow(x1-x2,2)+pow(y1-y2,2)+pow(z1-z2,2)+pow(v1-v2,2)+pow(u1-u2,2)+pow(w1-w2,2));
+
+}
+
+
+bool checkIkValidity(robot_state::RobotState* robot_state, const robot_state::JointModelGroup* joint_group, const double* joint_group_variable_values){
+
+  return true;
+}
+
+
+ // moveit::core::GroupStateValidityCallbackFn constraint_fn = boost::bind(&isIKStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
+   //                           collision_checking_verbose_, only_check_self_collision_, visual_tools_, _1, _2, _3);
+
+std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupInterface &move_group_interface , geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ){
   
 
     // - AnytimePathShortening
@@ -229,9 +245,9 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
 
 
   //std::string planner_id = "SemiPersistentLazyPRMstar";
-  std::string planner_id = "SemiPersistentLazyPRMstar";
+  std::string planner_id = "RRTstar";
   move_group_interface.setPlannerId(planner_id);
-  move_group_interface.setPlanningTime(600);
+  move_group_interface.setPlanningTime(60);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -247,19 +263,86 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   move_group_interface.setMaxAccelerationScalingFactor(1.0);
 
 
-  std::string planner_test = move_group_interface.getPlannerId();
-  std::string pipeline_test = move_group_interface.getPlanningPipelineId();
-  std::cout<<"getPlannerId : "<<planner_test<<std::endl;
-  std::cout<<"getPipeline : "<<pipeline_test<<std::endl;
+  moveit_msgs::JointConstraint jc1;
+  jc1.joint_name = "joint_1";  
+  jc1.position = 0.0;
+  jc1.tolerance_above = 1.4;
+  jc1.tolerance_below = 1.4;
+  jc1.weight = 1.0; 
 
-  //std::cout<<planner_test*<<std::endl;
+  moveit_msgs::JointConstraint jc4;
+  jc4.joint_name = "joint_4";  
+  jc4.position = 0.0;
+  jc4.tolerance_above = 2.27;
+  jc4.tolerance_below = 2.27;
+  jc4.weight = 1.0; 
+
+  moveit_msgs::Constraints test_constraints;
+  //test_constraints.orientation_constraints.push_back(ocm);
+  //test_constraints.position_constraints.push_back(pcm);
+  test_constraints.joint_constraints.push_back(jc1);
+  test_constraints.joint_constraints.push_back(jc4);
+  move_group_interface.setPathConstraints(test_constraints);
+
+  
+  // std::string planner_test = move_group_interface.getPlannerId();
+  // std::string pipeline_test = move_group_interface.getPlanningPipelineId();
+  // std::cout<<"getPlannerId : "<<planner_test<<std::endl;
+  // std::cout<<"getPipeline : "<<pipeline_test<<std::endl;
+
+  // //std::cout<<planner_test*<<std::endl;
+
+  // robot_state::RobotState begin_state(*move_group_interface.getCurrentState());
+
+  // std::vector<double> init_state;
+  // begin_state.copyJointGroupPositions(joint_model_group, init_state);
+
+  int number_joint = 6;
+  // double min_dist = 9000;
+
+  // std::chrono::high_resolution_clock::time_point begin_ik = std::chrono::high_resolution_clock::now();
+
+  // for (int k=0; k<8 ; k++){
+  //   robot_state::RobotState final_state(*move_group_interface.getCurrentState());
+
+  //   final_state.setFromIK(joint_model_group,target_pose);
 
 
-  robot_state::RobotState final_state(*move_group_interface.getCurrentState());
-  final_state.setFromIK(joint_model_group,target_pose);
+  //   std::vector<double> joint_group_positions_final_ik;
+  //   final_state.copyJointGroupPositions(joint_model_group, joint_group_positions_final_ik);
 
-  move_group_interface.setJointValueTarget(final_state);
-  //move_group_interface.setPoseTarget(target_pose);
+
+
+  //   for (int i =0 ; i< number_joint  ; i++ )
+  //   {
+  //     std::cout << "ik1 i = " << i << " : " << joint_group_positions_final_ik[i]*180/3.14159265 << std::endl;
+  //   }
+
+  //   double dist6D = distance6D((double) joint_group_positions_final_ik[0]*180/3.14159265,(double) joint_group_positions_final_ik[1]*180/3.14159265,(double) joint_group_positions_final_ik[2]*180/3.14159265,
+  //                            (double) joint_group_positions_final_ik[3]*180/3.14159265,(double) joint_group_positions_final_ik[4]*180/3.14159265,(double) joint_group_positions_final_ik[5]*180/3.14159265,
+  //                            (double) init_state[0]*180/3.14159265,                    (double) init_state[1]*180/3.14159265,                    (double) init_state[2]*180/3.14159265,
+  //                            (double) init_state[3]*180/3.14159265,                    (double) init_state[4]*180/3.14159265,                    (double) init_state[5]*180/3.14159265);
+
+
+  //   std::cout << "DISTANCE ULT 6D = " << dist6D << std::endl;
+
+  //   if (dist6D < min_dist){
+  //     move_group_interface.setJointValueTarget(final_state);
+  //   }
+
+  // }
+
+
+  // std::chrono::high_resolution_clock::time_point end_ik = std::chrono::high_resolution_clock::now();
+
+  // double time_ik = std::chrono::duration_cast<std::chrono::microseconds>(end_ik-begin_ik).count()/1000000.0;
+
+  // std::cout<< "TIME TO IK TOTAL : " << time_ik << " s " <<std::endl;
+
+
+
+
+  move_group_interface.setPoseTarget(target_pose);
 
   // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
   // void getJointValueTarget(std::vector<double>& group_variable_values) const;
@@ -300,7 +383,6 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   // Next get the current set of joint values for the group.
   std::vector<double> joint_group_positions;
   trajecto_state.getWayPointPtr(0)->copyJointGroupPositions(joint_model_group, joint_group_positions);
-  int number_joint = 7;
 
   for (int i =0 ; i< number_joint  ; i++ )
   {
@@ -488,7 +570,7 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
 
 
 
-  std::string planner_id = "SemiPersistentLazyPRMstar";
+  std::string planner_id = "RRTstar";
   move_group_interface.setPlannerId(planner_id);
   std::map<std::string, std::string> parametre = move_group_interface.getPlannerParams(planner_id,"arm_group");
 
@@ -564,10 +646,27 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
   ocm.absolute_z_axis_tolerance = 10.0;
   ocm.weight = 1.0;
 
-  //moveit_msgs::Constraints test_constraints;
+
+  moveit_msgs::JointConstraint jc1;
+  jc1.joint_name = "joint_1";  
+  jc1.position = 0.0;
+  jc1.tolerance_above = 1.4;
+  jc1.tolerance_below = 1.4;
+  jc1.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc4;
+  jc4.joint_name = "joint_4";  
+  jc4.position = 0.0;
+  jc4.tolerance_above = 2.27;
+  jc4.tolerance_below = 2.27;
+  jc4.weight = 1.0; 
+
+  moveit_msgs::Constraints test_constraints;
   //test_constraints.orientation_constraints.push_back(ocm);
   //test_constraints.position_constraints.push_back(pcm);
-  //move_group_interface.setPathConstraints(test_constraints);
+  test_constraints.joint_constraints.push_back(jc1);
+  test_constraints.joint_constraints.push_back(jc4);
+  move_group_interface.setPathConstraints(test_constraints);
 
 
 }
@@ -1027,7 +1126,7 @@ EigenSTL::vector_Vector3d evaluate_plan(moveit::planning_interface::MoveGroupInt
 }
 
 
-std::vector<std::vector<double>> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
+std::vector<std::vector<double>> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ){
 
 
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -1042,11 +1141,67 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   NUM_TRAJ += 1;
 
 
-  robot_state::RobotState final_state(*move_group_interface.getCurrentState());
-  final_state.setFromIK(joint_model_group,target_pose);
 
-  move_group_interface.setJointValueTarget(final_state);
-  //move_group_interface.setPoseTarget(target_pose);
+  // robot_state::RobotState begin_state(*move_group_interface.getCurrentState());
+
+  // std::vector<double> init_state;
+  // begin_state.copyJointGroupPositions(joint_model_group, init_state);
+
+  int number_joint = 6;
+
+  //std::chrono::high_resolution_clock::time_point begin_ik = std::chrono::high_resolution_clock::now();
+
+  // double min_dist = 9000;
+
+
+  // for (int k=0; k<8 ; k++){
+  //   robot_state::RobotState final_state(*move_group_interface.getCurrentState());
+
+  //   final_state.setFromIK(joint_model_group,target_pose);
+
+
+  //   std::vector<double> joint_group_positions_final_ik;
+  //   final_state.copyJointGroupPositions(joint_model_group, joint_group_positions_final_ik);
+
+  //   planning_scene::PlanningScene planning_scene(kinematic_model);
+
+  //   bool constrained = planning_scene_interface.isStateConstrained(final_state, test_constraints);
+  //   ROS_INFO_STREAM("Test 7: final state is "
+  //                   << (constrained ? "constrained" : "not constrained"));
+
+  //   for (int i =0 ; i< number_joint  ; i++ )
+  //   {
+  //     std::cout << "ik1 i = " << i << " : " << joint_group_positions_final_ik[i]*180/3.14159265 << std::endl;
+  //   }
+
+  //   double dist6D = distance6D((double) joint_group_positions_final_ik[0]*180/3.14159265,(double) joint_group_positions_final_ik[1]*180/3.14159265,(double) joint_group_positions_final_ik[2]*180/3.14159265,
+  //                            (double) joint_group_positions_final_ik[3]*180/3.14159265,(double) joint_group_positions_final_ik[4]*180/3.14159265,(double) joint_group_positions_final_ik[5]*180/3.14159265,
+  //                            (double) init_state[0]*180/3.14159265,                    (double) init_state[1]*180/3.14159265,                    (double) init_state[2]*180/3.14159265,
+  //                            (double) init_state[3]*180/3.14159265,                    (double) init_state[4]*180/3.14159265,                    (double) init_state[5]*180/3.14159265);
+
+
+  //   std::cout << "DISTANCE ULT 6D = " << dist6D << std::endl;
+
+  //   if (dist6D < min_dist){
+  //     move_group_interface.setJointValueTarget(final_state);
+  //   }
+  // }
+
+
+  // std::chrono::high_resolution_clock::time_point end_ik = std::chrono::high_resolution_clock::now();
+
+  // double time_ik = std::chrono::duration_cast<std::chrono::microseconds>(end_ik-begin_ik).count()/1000000.0;
+
+  // std::cout<< "TIME TO IK TOTAL : " << time_ik << " s " <<std::endl;
+
+
+
+
+  // robot_state::RobotState final_state(*move_group_interface.getCurrentState());
+  // final_state.setFromIK(joint_model_group,target_pose);
+
+  // move_group_interface.setJointValueTarget(final_state);
+  move_group_interface.setPoseTarget(target_pose);
 
 
   // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
@@ -1131,7 +1286,7 @@ void trajecto_scan_to_bari(moveit::planning_interface::MoveGroupInterface &move_
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group);
+  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group, planning_scene_interface);
 
 }
 
@@ -1146,7 +1301,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
 
-  std::vector<double> traj1 = go_to_position_begin(move_group_interface, scan_pose, visual_tools, joint_model_group);
+  std::vector<double> traj1 = go_to_position_begin(move_group_interface, scan_pose, visual_tools, joint_model_group, planning_scene_interface);
 
   visual_tools.publishText(text_pose, "Go to scan position from origin", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
   visual_tools.trigger();
@@ -1214,7 +1369,7 @@ void trajecto_bari_to_scan(moveit::planning_interface::MoveGroupInterface &move_
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, scan_pose, visual_tools, joint_model_group);
+  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, scan_pose, visual_tools, joint_model_group, planning_scene_interface);
 
 }
 
@@ -1230,7 +1385,7 @@ void trajecto_scan_to_out(moveit::planning_interface::MoveGroupInterface &move_g
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, final_pose, visual_tools, joint_model_group);
+  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, final_pose, visual_tools, joint_model_group, planning_scene_interface);
 
 }
 
@@ -1256,7 +1411,7 @@ void trajecto_out_to_bari(moveit::planning_interface::MoveGroupInterface &move_g
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  std::vector<std::vector<double>> traj5 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group);
+  std::vector<std::vector<double>> traj5 = go_to_position(move_group_interface, bari_pose, visual_tools, joint_model_group, planning_scene_interface);
 
 }
 
@@ -1272,7 +1427,7 @@ void trajecto_bari_to_out(moveit::planning_interface::MoveGroupInterface &move_g
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, final_pose, visual_tools, joint_model_group);
+  std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, final_pose, visual_tools, joint_model_group ,planning_scene_interface);
 
 }
 
