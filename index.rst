@@ -51,6 +51,7 @@ Building more complex applications with MoveIt often requires developers to dig 
    doc/subframes/subframes_tutorial
    doc/moveit_cpp/moveitcpp_tutorial
    doc/bullet_collision_checker/bullet_collision_checker
+   doc/mesh_filter/mesh_filter_tutorial
 
 Integration with a New Robot
 ----------------------------
@@ -75,6 +76,7 @@ Configuration
 
    doc/kinematics_configuration/kinematics_configuration_tutorial
    doc/custom_constraint_samplers/custom_constraint_samplers_tutorial
+   doc/planning_constraints/planning_constraints.rst
    doc/ompl_interface/ompl_interface_tutorial
    doc/chomp_planner/chomp_planner_tutorial
    doc/stomp_planner/stomp_planner_tutorial
@@ -93,6 +95,7 @@ Miscellaneous
    doc/realtime_servo/realtime_servo_tutorial
    doc/benchmarking/benchmarking_tutorial
    doc/tests/tests_tutorial
+   doc/test_debugging/test_debugging_tutorial
 
 Attribution
 -----------
