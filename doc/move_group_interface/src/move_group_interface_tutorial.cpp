@@ -43,6 +43,8 @@
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 
+#include <moveit/robot_state/conversions.h>
+
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 #include <chrono>
@@ -245,7 +247,7 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
 
 
   //std::string planner_id = "SemiPersistentLazyPRMstar";
-  std::string planner_id = "RRTstar";
+  std::string planner_id = "PersistentLazyPRM";
   move_group_interface.setPlannerId(planner_id);
   move_group_interface.setPlanningTime(60);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
@@ -266,24 +268,56 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   moveit_msgs::JointConstraint jc1;
   jc1.joint_name = "joint_1";  
   jc1.position = 0.0;
-  jc1.tolerance_above = 1.4;
+  jc1.tolerance_above = 1.4; //80 degrés
   jc1.tolerance_below = 1.4;
   jc1.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc2;
+  jc2.joint_name = "joint_2";  
+  jc2.position = 0.0;
+  jc2.tolerance_above = 1.04; //60
+  jc2.tolerance_below = 0.7; //40
+  jc2.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc3;
+  jc3.joint_name = "joint_3";
+  jc3.position = 0.0;
+  jc3.tolerance_above = 2.53; //145
+  jc3.tolerance_below = 0.0; //0
+  jc3.weight = 1.0;
 
   moveit_msgs::JointConstraint jc4;
   jc4.joint_name = "joint_4";  
   jc4.position = 0.0;
-  jc4.tolerance_above = 2.27;
+  jc4.tolerance_above = 2.27; //130
   jc4.tolerance_below = 2.27;
   jc4.weight = 1.0; 
+
+
+  moveit_msgs::JointConstraint jc5;
+  jc5.joint_name = "joint_5";  
+  jc5.position = 0.0;
+  jc5.tolerance_above = 2.39; //137
+  jc5.tolerance_below = 2.0; //115
+  jc5.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc6;
+  jc6.joint_name = "joint_6";  
+  jc6.position = 0.0;
+  jc6.tolerance_above = 3.14; //180
+  jc6.tolerance_below = 3.15;
+  jc6.weight = 1.0; 
 
   moveit_msgs::Constraints test_constraints;
   //test_constraints.orientation_constraints.push_back(ocm);
   //test_constraints.position_constraints.push_back(pcm);
   test_constraints.joint_constraints.push_back(jc1);
+  test_constraints.joint_constraints.push_back(jc2);
+  test_constraints.joint_constraints.push_back(jc3);
   test_constraints.joint_constraints.push_back(jc4);
+  test_constraints.joint_constraints.push_back(jc5);
+  //test_constraints.joint_constraints.push_back(jc6);
   move_group_interface.setPathConstraints(test_constraints);
-
   
   // std::string planner_test = move_group_interface.getPlannerId();
   // std::string pipeline_test = move_group_interface.getPlanningPipelineId();
@@ -389,7 +423,7 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
     std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
   }
   //std::cout << "test std::cout" << trajecto_state.getWayPoint(0).getVariablePositions << std::endl;  //trajecto_state.getWayPointCount()
-  std::cout << "test std::cout" << trajecto_state.getWayPoint(0) << std::endl;  //trajecto_state.getWayPointCount()
+  //std::cout << "test std::cout" << trajecto_state.getWayPoint(0) << std::endl;  //trajecto_state.getWayPointCount()
 
   std::cout << "Mine:" << std::endl;
   std::cout << "Mine:" << std::endl;
@@ -570,7 +604,7 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
 
 
 
-  std::string planner_id = "RRTstar";
+  std::string planner_id = "SemiPersistentLazyPRMstar";
   move_group_interface.setPlannerId(planner_id);
   std::map<std::string, std::string> parametre = move_group_interface.getPlannerParams(planner_id,"arm_group");
 
@@ -590,20 +624,20 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
 
 
 
-  move_group_interface.setPlanningTime(5);
+  move_group_interface.setPlanningTime(0.3);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
       the default value, which is defined in joint_limits.yaml of the moveit_config.
       If the value is greater than 1, it is set to 1.0. */
-  move_group_interface.setMaxVelocityScalingFactor(0.5);
+  move_group_interface.setMaxVelocityScalingFactor(1.0);
 
   /** \brief Set a scaling factor for optionally reducing the maximum joint acceleration.
       Allowed values are in (0,1]. The maximum joint acceleration specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
       the default value, which is defined in joint_limits.yaml of the moveit_config.
       If the value is greater than 1, it is set to 1.0. */
-  move_group_interface.setMaxAccelerationScalingFactor(0.5);
+  move_group_interface.setMaxAccelerationScalingFactor(1.0);
 
 
 
@@ -650,22 +684,55 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
   moveit_msgs::JointConstraint jc1;
   jc1.joint_name = "joint_1";  
   jc1.position = 0.0;
-  jc1.tolerance_above = 1.4;
+  jc1.tolerance_above = 1.4; //80 degrés
   jc1.tolerance_below = 1.4;
   jc1.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc2;
+  jc2.joint_name = "joint_2";  
+  jc2.position = 0.0;
+  jc2.tolerance_above = 1.04; //60
+  jc2.tolerance_below = 0.7; //40
+  jc2.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc3;
+  jc3.joint_name = "joint_3";
+  jc3.position = 0.0;
+  jc3.tolerance_above = 2.53; //145
+  jc3.tolerance_below = 0.0; //+40
+  jc3.weight = 1.0;
 
   moveit_msgs::JointConstraint jc4;
   jc4.joint_name = "joint_4";  
   jc4.position = 0.0;
-  jc4.tolerance_above = 2.27;
+  jc4.tolerance_above = 2.27; //130
   jc4.tolerance_below = 2.27;
   jc4.weight = 1.0; 
+
+
+  moveit_msgs::JointConstraint jc5;
+  jc5.joint_name = "joint_5";  
+  jc5.position = 0.0;
+  jc5.tolerance_above = 2.39; //137
+  jc5.tolerance_below = 0; //115
+  jc5.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc6;
+  jc6.joint_name = "joint_6";  
+  jc6.position = 0.0;
+  jc6.tolerance_above = 3.14; //180
+  jc6.tolerance_below = 3.15;
+  jc6.weight = 1.0; 
 
   moveit_msgs::Constraints test_constraints;
   //test_constraints.orientation_constraints.push_back(ocm);
   //test_constraints.position_constraints.push_back(pcm);
   test_constraints.joint_constraints.push_back(jc1);
+  test_constraints.joint_constraints.push_back(jc2);
+  test_constraints.joint_constraints.push_back(jc3);
   test_constraints.joint_constraints.push_back(jc4);
+  test_constraints.joint_constraints.push_back(jc5);
+  //test_constraints.joint_constraints.push_back(jc6);
   move_group_interface.setPathConstraints(test_constraints);
 
 
@@ -899,12 +966,59 @@ void setup_planner_test(moveit::planning_interface::MoveGroupInterface &move_gro
   ocm.absolute_y_axis_tolerance = 2.0;
   ocm.absolute_z_axis_tolerance = 10.0;
   ocm.weight = 1.0;
+  moveit_msgs::JointConstraint jc1;
+  jc1.joint_name = "joint_1";  
+  jc1.position = 0.0;
+  jc1.tolerance_above = 1.4; //80 degrés
+  jc1.tolerance_below = 1.4;
+  jc1.weight = 1.0; 
 
-  //moveit_msgs::Constraints test_constraints;
+  moveit_msgs::JointConstraint jc2;
+  jc2.joint_name = "joint_2";  
+  jc2.position = 0.0;
+  jc2.tolerance_above = 1.04; //60
+  jc2.tolerance_below = 0.7; //40
+  jc2.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc3;
+  jc3.joint_name = "joint_3";
+  jc3.position = 0.0;
+  jc3.tolerance_above = 2.53; //145
+  jc3.tolerance_below = 0.0; //+40
+  jc3.weight = 1.0;
+
+  moveit_msgs::JointConstraint jc4;
+  jc4.joint_name = "joint_4";  
+  jc4.position = 0.0;
+  jc4.tolerance_above = 2.27; //130
+  jc4.tolerance_below = 2.27;
+  jc4.weight = 1.0; 
+
+
+  moveit_msgs::JointConstraint jc5;
+  jc5.joint_name = "joint_5";  
+  jc5.position = 0.0;
+  jc5.tolerance_above = 2.39; //137
+  jc5.tolerance_below = 0; //115
+  jc5.weight = 1.0; 
+
+  moveit_msgs::JointConstraint jc6;
+  jc6.joint_name = "joint_6";  
+  jc6.position = 0.0;
+  jc6.tolerance_above = 3.14; //180
+  jc6.tolerance_below = 3.15;
+  jc6.weight = 1.0; 
+
+  moveit_msgs::Constraints test_constraints;
   //test_constraints.orientation_constraints.push_back(ocm);
   //test_constraints.position_constraints.push_back(pcm);
-  //move_group_interface.setPathConstraints(test_constraints);
-
+  test_constraints.joint_constraints.push_back(jc1);
+  test_constraints.joint_constraints.push_back(jc2);
+  test_constraints.joint_constraints.push_back(jc3);
+  test_constraints.joint_constraints.push_back(jc4);
+  test_constraints.joint_constraints.push_back(jc5);
+  //test_constraints.joint_constraints.push_back(jc6);
+  move_group_interface.setPathConstraints(test_constraints);
 
 }
 
@@ -1076,7 +1190,7 @@ EigenSTL::vector_Vector3d evaluate_plan(moveit::planning_interface::MoveGroupInt
   //   std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
   // }
   // //std::cout << "test std::cout" << trajecto_state.getWayPoint(0).getVariablePositions << std::endl;  //trajecto_state.getWayPointCount()
-  // std::cout << "test std::cout" << trajecto_state.getWayPoint(0) << std::endl;  //trajecto_state.getWayPointCount()
+  std::cout << "test std::cout" << trajecto_state.getWayPoint(1) << std::endl;  //trajecto_state.getWayPointCount()
 
   std::cout << "Mine:" << std::endl;
   std::cout << "Mine:" << std::endl;
@@ -1451,6 +1565,12 @@ void full_scenario(moveit::planning_interface::MoveGroupInterface &move_group_in
     ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1));
     move_group_interface.attachObject(collision_object_baris[i*(N+1)].id, "link_tool");
 
+    //moveit_msgs::AttachedCollisionObject aco;
+    //aco.object.id = collision_object_baris[0].id;
+    //aco.link_name = "link_tool";
+    //planning_scene_interface.applyAttachedCollisionObject(aco);
+
+
     //std::this_thread::sleep_for(dura70);
 
 
@@ -1496,7 +1616,28 @@ void full_scenario(moveit::planning_interface::MoveGroupInterface &move_group_in
     visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     visual_tools.trigger();
 
-    move_group_interface.setStartStateToCurrentState();
+    //move_group_interface.setStartStateToCurrentState();
+
+    // moveit::core::RobotStatePtr start_state;
+    // start_state = move_group_interface.getCurrentState();
+
+    // // moveit_msgs::RobotState rob_st;
+    // // bool copy_attached_bodies = true;
+
+    // // robot_state::RobotState rs = boost::get<robot_state::RobotState>(start_state);
+    // // moveit::core::robotStateToRobotStateMsg(rs, rob_st, copy_attached_bodies);
+
+
+    // moveit_msgs::RobotState rob_st;
+    // bool copy_attached_bodies = true;
+    // //robot_state::RobotState rs = boost::get<robot_state::RobotState>(start_state);
+    // robot_state::robotStateToRobotStateMsg(*start_state, rob_st, copy_attached_bodies);
+
+
+    // //move_group_interface.setStartState(*start_state);
+    // move_group_interface.setStartState(rob_st);
+    move_group_interface.setStartState(*move_group_interface.getCurrentState());
+    // //planning_scene_interface.applyCollisionObject()
 
     trajecto_bari_to_out_by_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[i*(N+1)]);
 
@@ -1613,7 +1754,16 @@ void full_scenario(moveit::planning_interface::MoveGroupInterface &move_group_in
       ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i*(N+1) + j + 1);
       move_group_interface.detachObject(collision_object_baris[i*(N+1) + j + 1].id);
 
-      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+
+      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+
+
 
       // Show text in RViz of status
       visual_tools.deleteAllMarkers();
@@ -1699,7 +1849,7 @@ void full_scenario(moveit::planning_interface::MoveGroupInterface &move_group_in
   ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", (M-1)*(N+1) + N + 1);
   move_group_interface.detachObject(collision_object_baris[(M-1)*(N+1) + N + 1].id);
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
   // Show text in RViz of status
   visual_tools.deleteAllMarkers();
@@ -1804,6 +1954,10 @@ void full_scenario_without_attach(moveit::planning_interface::MoveGroupInterface
 
     move_group_interface.setStartStateToCurrentState();
 
+    // moveit::core::RobotStatePtr start_state;
+    // start_state = move_group_interface.getStartState();
+
+    // move_group_interface.setStartState(*start_state);
     trajecto_bari_to_out_by_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[i*(N+1)]);
 
 
@@ -1904,6 +2058,7 @@ void full_scenario_without_attach(moveit::planning_interface::MoveGroupInterface
       // Replan, but now with the object in hand.
       move_group_interface.setStartStateToCurrentState();
 
+
       trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[i*(N+1) + j + 1]);
 
 
@@ -1988,6 +2143,7 @@ void full_scenario_without_attach(moveit::planning_interface::MoveGroupInterface
 
   // Replan, but now with the object in hand.
   move_group_interface.setStartStateToCurrentState();
+
 
 
   trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[(M-1)*(N+1) + N + 1]);
@@ -2222,7 +2378,6 @@ void scenario_test_scan_attach(moveit::planning_interface::MoveGroupInterface &m
 
 
 }
-
 
 
 int main(int argc, char** argv)
