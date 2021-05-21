@@ -35,6 +35,7 @@
 /* Author: Sachin Chitta, Dave Coleman, Mike Lautman */
 
 #include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
 #include <moveit_msgs/DisplayRobotState.h>
@@ -52,6 +53,9 @@
 
 
 // TF2
+
+#include <tf2_eigen/tf2_eigen.h>
+
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <tf2_ros/transform_listener.h>
@@ -66,6 +70,46 @@ double Global_move_tool = 0;
 double NUM_TRAJ = 0;
 
 
+void createArrowMarker(visualization_msgs::Marker& marker, const geometry_msgs::Pose& pose, const Eigen::Vector3d& dir,
+                       int id, double scale = 0.1)
+{
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.type = visualization_msgs::Marker::CYLINDER;
+  marker.id = id;
+  marker.scale.x = 0.1 * scale;
+  marker.scale.y = 0.1 * scale;
+  marker.scale.z = scale;
+
+  Eigen::Isometry3d pose_eigen;
+  tf2::fromMsg(pose, pose_eigen);
+  marker.pose = tf2::toMsg(pose_eigen * Eigen::Translation3d(dir * (0.5 * scale)) *
+                           Eigen::Quaterniond::FromTwoVectors(Eigen::Vector3d::UnitZ(), dir));
+
+  marker.color.r = 0.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+  marker.color.a = 1.0;
+}
+
+void createFrameMarkers(visualization_msgs::MarkerArray& markers, const geometry_msgs::PoseStamped& target,
+                        const std::string& ns, bool locked = false)
+{
+  int id = markers.markers.size();
+  visualization_msgs::Marker m;
+  m.header.frame_id = target.header.frame_id;
+  m.ns = ns;
+  m.frame_locked = locked;
+
+  createArrowMarker(m, target.pose, Eigen::Vector3d::UnitX(), ++id);
+  m.color.r = 1.0;
+  markers.markers.push_back(m);
+  createArrowMarker(m, target.pose, Eigen::Vector3d::UnitY(), ++id);
+  m.color.g = 1.0;
+  markers.markers.push_back(m);
+  createArrowMarker(m, target.pose, Eigen::Vector3d::UnitZ(), ++id);
+  m.color.b = 1.0;
+  markers.markers.push_back(m);
+}
 
 
 void load_bari_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
@@ -315,7 +359,8 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   //std::string planner_id = "SemiPersistentLazyPRMstar";
   std::string planner_id = "PersistentLazyPRM";
   move_group_interface.setPlannerId(planner_id);
-  move_group_interface.setPlanningTime(60);
+  move_group_interface.setPlanningTime(3);
+
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -442,7 +487,18 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
 
 
 
+  geometry_msgs::Pose pose;
+  pose.orientation.w = 1.0;
+  //double res_x = center.x -0.5 + 0.1*xi;
+  pose.position.x = 0.0;
+  pose.position.y = 0.0;
+  pose.position.z = 0.15;
+
+  //move_group_interface.setPoseReferenceFrame("bary0");
+
   move_group_interface.setPoseTarget(target_pose);
+
+
 
   // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
   // void getJointValueTarget(std::vector<double>& group_variable_values) const;
@@ -1312,9 +1368,9 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
   text_pose.translation().z() = 1.3;
 
-  visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-  visual_tools.publishAxisLabeled(target_pose, "target_pose_final");
-  visual_tools.trigger(); // to apply changes
+  //visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  //visual_tools.publishAxisLabeled(target_pose, "target_pose_final");
+  //visual_tools.trigger(); // to apply changes
 
 
 
@@ -1381,7 +1437,62 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   // final_state.setFromIK(joint_model_group,target_pose);
 
   // move_group_interface.setJointValueTarget(final_state);
-  move_group_interface.setPoseTarget(target_pose);
+
+  geometry_msgs::PoseStamped pose;
+  pose.header.frame_id = "bari0";
+
+  pose.pose.orientation.x = 0.93373;
+  pose.pose.orientation.y = -0.35765;
+  pose.pose.orientation.z = 0.0057657;
+  pose.pose.orientation.w = 0.014457;
+  //double res_x = center.x -0.5 + 0.1*xi;
+  pose.pose.position.x = 0.0;
+  pose.pose.position.y = 0.0;
+  pose.pose.position.z = 0.4;
+
+  ros::NodeHandle nh;
+  // Fetch the current planning scene state once
+  auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
+  planning_scene_monitor->requestPlanningSceneState();
+  planning_scene_monitor::LockedPlanningSceneRO planning_scene(planning_scene_monitor);
+
+
+  // Visualize frames as rviz markers
+  ros::Publisher marker_publisher = nh.advertise<visualization_msgs::MarkerArray>("rviz_visual_tools", 10);
+  auto showFrames = [&](geometry_msgs::PoseStamped target, const std::string& eef) {
+    visualization_msgs::MarkerArray markers;
+    // convert target pose into planning frame
+    Eigen::Isometry3d tf;
+    tf2::fromMsg(target.pose, tf);
+    target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id) * tf);
+    target.header.frame_id = planning_scene->getPlanningFrame();
+    createFrameMarkers(markers, target, "target");
+
+    // convert eef in pose relative to panda_hand
+    target.header.frame_id = "bari0";
+    target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id).inverse() *
+                             planning_scene->getFrameTransform(eef));
+    createFrameMarkers(markers, target, "eef", true);
+
+    marker_publisher.publish(markers);
+  };
+
+
+
+
+  visual_tools.trigger(); // to apply changes
+
+
+  //move_group_interface.setPoseReferenceFrame("bari0");
+
+  showFrames(pose, "link_6");
+  move_group_interface.setPoseTarget(pose);
+
+
+
+
+
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
   // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
@@ -1515,7 +1626,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
 
   visual_tools.deleteAllMarkers();
   visual_tools.publishText(text_pose, " current : show bari position", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-  visual_tools.publishAxisLabeled(bari_poses[0], "bari_pose");
+  //visual_tools.publishAxisLabeled(bari_poses[0], "bari_pose");
   visual_tools.trigger(); // to apply changes
 
 
@@ -2578,6 +2689,26 @@ void pick(moveit::planning_interface::MoveGroupInterface& move_group, std::vecto
   tf2_ros::Buffer tf_buffer;
   tf2_ros::TransformListener tf2_listener(tf_buffer);
 
+
+  geometry_msgs::PointStamped pointstamp ;
+  pointstamp.header.frame_id = "link_finger1";
+  pointstamp.header.stamp = ros::Time(0);
+  pointstamp.point.x = 1.0;
+  pointstamp.point.y = 0.0;
+  pointstamp.point.z = 0.0;
+
+  // tf2_listener.transformPoint("base_link", pointstamp );
+
+  // visual_tools.publishAxisLabeled(pointstamp, "tcp_in_link");
+  // visual_tools.trigger(); // to apply changes
+
+
+  // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+
+
   geometry_msgs::TransformStamped tcp_in_link_finger1; // My frames are named "base_link" and "leap_motion"
   tcp_in_link_finger1.header.frame_id = "link_finger1";
   tcp_in_link_finger1.child_frame_id = "link_TCP";
@@ -2593,6 +2724,8 @@ void pick(moveit::planning_interface::MoveGroupInterface& move_group, std::vecto
   tcp_in_link_finger1.transform.rotation.w = q.w();
 
   geometry_msgs::PoseStamped pose_finger = move_group.getCurrentPose("link_finger1") ;
+
+
 
 
 
@@ -3037,9 +3170,9 @@ int main(int argc, char** argv)
 
   //full_scenario_without_attach( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
 
-  //full_scenario( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
+  full_scenario( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
 
-  full_scenario_pick_place( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
+  //full_scenario_pick_place( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
 
 
   //scenario_test_scan_attach( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
