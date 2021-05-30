@@ -319,6 +319,41 @@ bool checkIkValidity(robot_state::RobotState* robot_state, const robot_state::Jo
 }
 
 
+geometry_msgs::Quaternion apply_rotation(geometry_msgs::Quaternion q1 , geometry_msgs::Quaternion q_to_apply){
+
+  geometry_msgs::Quaternion result;
+  tf2::Quaternion q_orig, q_rot, q_new;
+
+  // Get the original orientation of 'commanded_pose'
+  tf2::convert(q1 , q_orig);
+  tf2::convert(q_to_apply , q_rot);
+
+
+  q_new = q_rot*q_orig;  // Calculate the new orientation
+  q_new.normalize();
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_new, result);
+  return result;
+
+}
+
+
+tf2::Quaternion apply_rotation(tf2::Quaternion q1 , tf2::Quaternion q_rot){
+
+  tf2::Quaternion q_new;
+
+
+  q_new = q_rot*q1;  // Calculate the new orientation
+  q_new.normalize();
+
+  return q_new;
+
+}
+
+
+
+
  // moveit::core::GroupStateValidityCallbackFn constraint_fn = boost::bind(&isIKStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
    //                           collision_checking_verbose_, only_check_self_collision_, visual_tools_, _1, _2, _3);
 
@@ -1361,6 +1396,113 @@ EigenSTL::vector_Vector3d evaluate_plan(moveit::planning_interface::MoveGroupInt
 
 }
 
+tf2::Quaternion set_quentin(float rx, float ry, float rz){
+  tf2::Quaternion q_rotx;
+  q_rotx.setRPY(rx, 0.0, 0.0);
+
+  tf2::Quaternion q_roty;
+  q_roty.setRPY(0.0, ry, 0.0);
+
+  tf2::Quaternion q_rotz;
+  q_rotz.setRPY(0.0, 0.0, rz);
+
+  return q_rotx*q_roty*q_rotz;
+}
+
+
+
+geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari){
+
+  geometry_msgs::PoseStamped pose_transformed;
+
+  geometry_msgs::PoseStamped tf_rot_90;
+
+  tf2::Quaternion q_rot90;
+  q_rot90.setRPY(-1.5708, 0.0, 0.0);
+  tf2::convert(q_rot90, tf_rot_90.pose.orientation);
+
+  tf_rot_90.pose.position.x = 0.0;
+  tf_rot_90.pose.position.y = 0.0;
+  tf_rot_90.pose.position.z = 0.0;
+
+  Eigen::Isometry3d tfi_rot90;
+  tf2::fromMsg(tf_rot_90.pose, tfi_rot90); //pose in bary frame
+
+  //###########
+
+
+  pose_transformed.pose = tf2::toMsg(tfi_rot90 * tf_tcp_in_bari); //world to bary * pose in bary = pose in world
+
+
+
+
+
+  geometry_msgs::PoseStamped tf_translation;
+  tf_translation.header.frame_id = "bari0";
+
+  tf2::Quaternion q_test;
+  q_test.setRPY( 0.0, 0.0, 0.0);
+
+  tf2::convert(q_test, tf_translation.pose.orientation);
+
+  //double res_x = center.x -0.5 + 0.1*xi;
+  tf_translation.pose.position.x = 0.0;
+  tf_translation.pose.position.y = 0.0;
+  tf_translation.pose.position.z = -0.03;
+  Eigen::Isometry3d tf_iso_translation;
+  tf2::fromMsg(tf_translation.pose, tf_iso_translation); //pose in bary frame
+
+
+
+  pose_transformed.pose = tf2::toMsg(tfi_rot90 * tf_tcp_in_bari * tf_iso_translation); //world to bary * pose in bary = pose in world
+
+
+
+
+  geometry_msgs::PoseStamped tf_tool_to_tcp;
+  tf_tool_to_tcp.header.frame_id = "bari0";
+
+  tf2::Quaternion q_test333;
+  q_test333 = set_quentin( 0.349066, 0.0, 0.0); //20°
+
+  tf2::convert(q_test333, tf_tool_to_tcp.pose.orientation);
+
+  //double res_x = center.x -0.5 + 0.1*xi;
+  tf_tool_to_tcp.pose.position.x = 0.0;
+  tf_tool_to_tcp.pose.position.y = -0.040;
+  tf_tool_to_tcp.pose.position.z = 0.3735;
+  Eigen::Isometry3d tf_iso_tool_to_tcp;
+  tf2::fromMsg(tf_tool_to_tcp.pose, tf_iso_tool_to_tcp); //pose in bary frame
+
+
+
+  pose_transformed.pose = tf2::toMsg(tfi_rot90 * tf_tcp_in_bari * tf_iso_translation * tf_iso_tool_to_tcp.inverse()); //world to bary * pose in bary = pose in world
+
+
+
+  geometry_msgs::PoseStamped tf_link6_to_tool;
+  tf_link6_to_tool.header.frame_id = "bari0";
+
+  tf2::Quaternion q_test444;
+  q_test444 = set_quentin( 0.0, 0.0, -0.785398); //20°
+
+  tf2::convert(q_test444, tf_link6_to_tool.pose.orientation);
+
+  //double res_x = center.x -0.5 + 0.1*xi;
+  tf_link6_to_tool.pose.position.x = 0.0;
+  tf_link6_to_tool.pose.position.y = 0.0;
+  tf_link6_to_tool.pose.position.z = 0.0;
+  Eigen::Isometry3d tf_iso_link6_to_tool;
+  tf2::fromMsg(tf_link6_to_tool.pose, tf_iso_link6_to_tool); //pose in bary frame
+
+
+
+  pose_transformed.pose = tf2::toMsg(tfi_rot90 * tf_tcp_in_bari * tf_iso_translation * tf_iso_tool_to_tcp.inverse() * tf_iso_link6_to_tool.inverse()); //world to bary * pose in bary = pose in world
+
+
+  return pose_transformed;
+}
+
 
 std::vector<std::vector<double>> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ){
 
@@ -1371,6 +1513,37 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   //visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
   //visual_tools.publishAxisLabeled(target_pose, "target_pose_final");
   //visual_tools.trigger(); // to apply changes
+
+  ros::NodeHandle nh;
+
+
+
+  // Fetch the current planning scene state once
+  auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
+  planning_scene_monitor->requestPlanningSceneState();
+  planning_scene_monitor::LockedPlanningSceneRO planning_scene(planning_scene_monitor);
+
+
+
+  // Visualize frames as rviz markers
+  ros::Publisher marker_publisher = nh.advertise<visualization_msgs::MarkerArray>("rviz_visual_tools", 10);
+  auto showFrames = [&](geometry_msgs::PoseStamped target, const std::string& eef) {
+    visualization_msgs::MarkerArray markers;
+    // convert target pose into planning frame
+    Eigen::Isometry3d tf;
+    tf2::fromMsg(target.pose, tf); //pose in bary frame
+    target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id) * tf); //world to bary * pose in bary = pose in world
+    target.header.frame_id = planning_scene->getPlanningFrame();
+    createFrameMarkers(markers, target, "target");
+
+    // convert eef in pose relative to panda_hand
+    target.header.frame_id = "bari0";
+    target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id).inverse() *
+                             planning_scene->getFrameTransform(eef)); //bari to world * world to eef = bari to eef
+    createFrameMarkers(markers, target, "eef", true);
+
+    marker_publisher.publish(markers);
+  };
 
 
 
@@ -1438,55 +1611,67 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
 
   // move_group_interface.setJointValueTarget(final_state);
 
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = "bari0";
+  geometry_msgs::PoseStamped pose_top_link6_in_bari;
+  pose_top_link6_in_bari.header.frame_id = "bari0";
 
-  pose.pose.orientation.x = 0.93373;
-  pose.pose.orientation.y = -0.35765;
-  pose.pose.orientation.z = 0.0057657;
-  pose.pose.orientation.w = 0.014457;
+  pose_top_link6_in_bari.pose.orientation.x = 0.93373;
+  pose_top_link6_in_bari.pose.orientation.y = -0.35765;
+  pose_top_link6_in_bari.pose.orientation.z = 0.0057657;
+  pose_top_link6_in_bari.pose.orientation.w = 0.014457;
   //double res_x = center.x -0.5 + 0.1*xi;
-  pose.pose.position.x = 0.0;
-  pose.pose.position.y = 0.0;
-  pose.pose.position.z = 0.4;
+  pose_top_link6_in_bari.pose.position.x = 0.0;
+  pose_top_link6_in_bari.pose.position.y = 0.0;
+  pose_top_link6_in_bari.pose.position.z = 0.4;
 
-  ros::NodeHandle nh;
-  // Fetch the current planning scene state once
-  auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
-  planning_scene_monitor->requestPlanningSceneState();
-  planning_scene_monitor::LockedPlanningSceneRO planning_scene(planning_scene_monitor);
+  // showFrames(pose_top_link6_in_bari, "bari0");
+  //   visual_tools.publishText(text_pose, "BEGIN SHOW FRAME2", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  // visual_tools.trigger(); // to apply changes
+  // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
+  // showFrames(pose_top_link6_in_bari, "base_link");
+  // visual_tools.publishText(text_pose, "BEGIN SHOW FRAME0", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  // visual_tools.trigger(); // to apply changes
+  // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-  // Visualize frames as rviz markers
-  ros::Publisher marker_publisher = nh.advertise<visualization_msgs::MarkerArray>("rviz_visual_tools", 10);
-  auto showFrames = [&](geometry_msgs::PoseStamped target, const std::string& eef) {
-    visualization_msgs::MarkerArray markers;
-    // convert target pose into planning frame
-    Eigen::Isometry3d tf;
-    tf2::fromMsg(target.pose, tf);
-    target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id) * tf);
-    target.header.frame_id = planning_scene->getPlanningFrame();
-    createFrameMarkers(markers, target, "target");
-
-    // convert eef in pose relative to panda_hand
-    target.header.frame_id = "bari0";
-    target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id).inverse() *
-                             planning_scene->getFrameTransform(eef));
-    createFrameMarkers(markers, target, "eef", true);
-
-    marker_publisher.publish(markers);
-  };
+  // showFrames(pose_top_link6_in_bari, "base_link");
+  //   visual_tools.publishText(text_pose, "BEGIN SHOW FRAME1", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  // visual_tools.trigger(); // to apply changes
+  // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+ 
 
 
 
 
+
+
+  geometry_msgs::PoseStamped tcp_in_bari;
+  tcp_in_bari.header.frame_id = "bari0";
+
+  tf2::Quaternion q_test;
+  q_test = set_quentin(-1.5708, 0.0, 1.5708);
+  tf2::convert(q_test, tcp_in_bari.pose.orientation);
+
+  //double res_x = center.x -0.5 + 0.1*xi;
+  tcp_in_bari.pose.position.x = 0.0;
+  tcp_in_bari.pose.position.y = -0.011;
+  tcp_in_bari.pose.position.z = -0.001;
+  Eigen::Isometry3d tf_tcp_in_bari;
+  tf2::fromMsg(tcp_in_bari.pose, tf_tcp_in_bari); //pose in bary frame
+
+
+  geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari);
+
+
+  showFrames(tf_transformed, "bari0");
+  visual_tools.publishText(text_pose, "BEGIN SHOW FRAME3", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
   visual_tools.trigger(); // to apply changes
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
-  //move_group_interface.setPoseReferenceFrame("bari0");
 
-  showFrames(pose, "link_6");
-  move_group_interface.setPoseTarget(pose);
+
+
+  move_group_interface.setPoseTarget(tf_transformed);
 
 
 
@@ -2626,25 +2811,6 @@ geometry_msgs::Quaternion relative_quat_rotation(geometry_msgs::Quaternion q1 , 
 }
 
 
-
-geometry_msgs::Quaternion apply_rotation(geometry_msgs::Quaternion q1 , geometry_msgs::Quaternion q_to_apply){
-
-  geometry_msgs::Quaternion result;
-  tf2::Quaternion q_orig, q_rot, q_new;
-
-  // Get the original orientation of 'commanded_pose'
-  tf2::convert(q1 , q_orig);
-  tf2::convert(q_to_apply , q_rot);
-
-
-  q_new = q_rot*q_orig;  // Calculate the new orientation
-  q_new.normalize();
-
-  // Stuff the new rotation back into the pose. This requires conversion into a msg type
-  tf2::convert(q_new, result);
-  return result;
-
-}
 
 
 void pick(moveit::planning_interface::MoveGroupInterface& move_group, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit_visual_tools::MoveItVisualTools &visual_tools)
