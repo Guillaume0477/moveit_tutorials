@@ -60,6 +60,8 @@
 
 #include <tf2_ros/transform_listener.h>
 
+//#define M_PI   3.14159265358979323846
+
 // The circle constant tau = 2*pi. One tau is one rotation in radians.
 const double tau = 2 * M_PI;
 
@@ -1411,7 +1413,7 @@ tf2::Quaternion set_quentin(float rx, float ry, float rz){
 
 
 
-geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari){
+geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari, float recul){
 
   geometry_msgs::PoseStamped pose_transformed;
 
@@ -1438,7 +1440,6 @@ geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari
 
 
   geometry_msgs::PoseStamped tf_translation;
-  tf_translation.header.frame_id = "bari0";
 
   tf2::Quaternion q_test;
   q_test.setRPY( 0.0, 0.0, 0.0);
@@ -1448,7 +1449,7 @@ geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari
   //double res_x = center.x -0.5 + 0.1*xi;
   tf_translation.pose.position.x = 0.0;
   tf_translation.pose.position.y = 0.0;
-  tf_translation.pose.position.z = -0.03;
+  tf_translation.pose.position.z = -recul;
   Eigen::Isometry3d tf_iso_translation;
   tf2::fromMsg(tf_translation.pose, tf_iso_translation); //pose in bary frame
 
@@ -1460,7 +1461,6 @@ geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari
 
 
   geometry_msgs::PoseStamped tf_tool_to_tcp;
-  tf_tool_to_tcp.header.frame_id = "bari0";
 
   tf2::Quaternion q_test333;
   q_test333 = set_quentin( 0.349066, 0.0, 0.0); //20°
@@ -1481,7 +1481,6 @@ geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari
 
 
   geometry_msgs::PoseStamped tf_link6_to_tool;
-  tf_link6_to_tool.header.frame_id = "bari0";
 
   tf2::Quaternion q_test444;
   q_test444 = set_quentin( 0.0, 0.0, -0.785398); //20°
@@ -1503,6 +1502,25 @@ geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari
   return pose_transformed;
 }
 
+// translation(m) / Rotation (deg)
+// Poses defined in object's frame (x,y,z,rx,ry,rz)
+Eigen::Isometry3d create_iso_tcp_in_bari(float tx, float ty, float tz, float rx, float ry, float rz){
+
+  geometry_msgs::PoseStamped tcp_in_bari;
+  tf2::Quaternion q_test;
+  q_test = set_quentin(rx*M_PI/180.0, ry*M_PI/180.0, rz*M_PI/180.0);
+  tf2::convert(q_test, tcp_in_bari.pose.orientation);
+
+  //double res_x = center.x -0.5 + 0.1*xi;
+  tcp_in_bari.pose.position.x = 0.0;
+  tcp_in_bari.pose.position.y = -0.011;
+  tcp_in_bari.pose.position.z = -0.001;
+  Eigen::Isometry3d tf_tcp_in_bari;
+  tf2::fromMsg(tcp_in_bari.pose, tf_tcp_in_bari); //pose in bary frame
+
+  return tf_tcp_in_bari;
+
+}
 
 std::vector<std::vector<double>> go_to_position(moveit::planning_interface::MoveGroupInterface &move_group_interface ,geometry_msgs::Pose target_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ){
 
@@ -1643,23 +1661,13 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
 
 
 
-
-  geometry_msgs::PoseStamped tcp_in_bari;
-  tcp_in_bari.header.frame_id = "bari0";
-
-  tf2::Quaternion q_test;
-  q_test = set_quentin(-1.5708, 0.0, 1.5708);
-  tf2::convert(q_test, tcp_in_bari.pose.orientation);
-
-  //double res_x = center.x -0.5 + 0.1*xi;
-  tcp_in_bari.pose.position.x = 0.0;
-  tcp_in_bari.pose.position.y = -0.011;
-  tcp_in_bari.pose.position.z = -0.001;
   Eigen::Isometry3d tf_tcp_in_bari;
-  tf2::fromMsg(tcp_in_bari.pose, tf_tcp_in_bari); //pose in bary frame
+
+  tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
 
 
-  geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari);
+  geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+  tf_transformed.header.frame_id = "bari0";
 
 
   showFrames(tf_transformed, "bari0");
@@ -1675,9 +1683,6 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
 
 
 
-
-
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
   // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
