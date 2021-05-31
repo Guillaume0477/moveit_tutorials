@@ -1650,12 +1650,23 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
+  // std::vector<geometry_msgs::PoseStamped> grasping_poses;
+
+  // Eigen::Isometry3d tf_tcp_in_bari;
+  // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+  // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+  // tf_transformed.header.frame_id = "bari0";
+  // grasping_poses.push_back(tf_transformed);
+  // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
+  // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+  // tf_transformed.header.frame_id = "bari0";
+  // grasping_poses.push_back(tf_transformed);
 
 
+
+  // move_group_interface.setPoseTargets(grasping_poses);
 
   move_group_interface.setPoseTarget(target_pose);
-
-
 
 
 
