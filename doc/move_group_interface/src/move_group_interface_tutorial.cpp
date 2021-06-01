@@ -47,6 +47,9 @@
 #include <moveit/robot_state/conversions.h>
 
 #include <moveit_visual_tools/moveit_visual_tools.h>
+#include <geometric_shapes/mesh_operations.h>
+#include <geometric_shapes/shape_operations.h>
+
 
 #include <chrono>
 #include <thread>
