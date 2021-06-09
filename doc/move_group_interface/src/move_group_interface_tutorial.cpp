@@ -766,7 +766,7 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
 
 
 
-  std::string planner_id = "SemiPersistentLazyPRMstar";
+  std::string planner_id = "SemiPersistentPRMstar";
   move_group_interface.setPlannerId(planner_id);
   std::map<std::string, std::string> parametre = move_group_interface.getPlannerParams(planner_id,"arm_group");
 
@@ -895,7 +895,7 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
   test_constraints.joint_constraints.push_back(jc4);
   test_constraints.joint_constraints.push_back(jc5);
   //test_constraints.joint_constraints.push_back(jc6);
-  //move_group_interface.setPathConstraints(test_constraints);
+  move_group_interface.setPathConstraints(test_constraints);
 
 
 }
@@ -1706,6 +1706,7 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   else{
 
   }
+  //my_plan.trajectory_.
 
   std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
   move_group_interface.execute(my_plan);
@@ -2445,6 +2446,111 @@ void full_scenario_grasp(moveit::planning_interface::MoveGroupInterface &move_gr
       grasping_poses[0].header.frame_id = collision_object_baris[i*(N+1) + j + 1].id;
       trajecto_out_to_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, grasping_poses[0]);
 
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+
+      geometry_msgs::Pose start_pose2;
+      start_pose2.orientation.w = 1.0;
+      start_pose2.position.x = 0.55;
+      start_pose2.position.y = -0.05;
+      start_pose2.position.z = 0.8;
+      std::vector<geometry_msgs::Pose> waypoints;
+      waypoints.push_back(start_pose2);
+
+      geometry_msgs::Pose target_pose3 = start_pose2;
+
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose3, "target_pose_final");
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+
+      target_pose3.position.z -= 0.2;
+      waypoints.push_back(target_pose3);  // down
+
+
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose3, "target_pose_final");
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+      target_pose3.position.y -= 0.2;
+      waypoints.push_back(target_pose3);  // right
+
+
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose3, "target_pose_final");
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+      target_pose3.position.z += 0.2;
+      target_pose3.position.y += 0.2;
+      target_pose3.position.x -= 0.2;
+      waypoints.push_back(target_pose3);  // up and left
+
+
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose3, "target_pose_final");
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+      moveit_msgs::RobotTrajectory trajectory;
+      const double jump_threshold = 0.0;
+      const double eef_step = 0.01;
+      //double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory, false);
+      //ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+
+
+
+      // Fetch the current planning scene state once
+      auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
+      planning_scene_monitor->requestPlanningSceneState();
+      planning_scene_monitor::LockedPlanningSceneRO planning_scene(planning_scene_monitor);
+
+
+
+
+      Eigen::Isometry3d tf;
+      tf2::fromMsg(grasping_poses[0].pose, tf); //pose in bary frame
+      target_pose3 = tf2::toMsg(planning_scene->getFrameTransform(grasping_poses[0].header.frame_id) * tf); //world to bary * pose in bary = pose in world
+
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose3, "ULTIME");
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+      std::vector<geometry_msgs::Pose> vecULT;
+      std::vector<geometry_msgs::Pose> vecULT2;
+      vecULT.push_back(target_pose3);
+      tf2::fromMsg(grasping_poses[1].pose, tf); //pose in bary frame
+      start_pose2 = tf2::toMsg(planning_scene->getFrameTransform(grasping_poses[0].header.frame_id) * tf); //world to bary * pose in bary = pose in world
+
+      visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+      visual_tools.publishAxisLabeled(target_pose3, "ULTIME2");
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+
+      vecULT.push_back(start_pose2);
+      vecULT2.push_back(start_pose2);
+      vecULT2.push_back(target_pose3);
+      //moveit_msgs::RobotTrajectory trajectory;
+
+      move_group_interface.setStartStateToCurrentState();
+
+
+      double fraction = move_group_interface.computeCartesianPath(vecULT, eef_step, jump_threshold, trajectory, false);
+      ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+
+
+
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+      move_group_interface.execute(trajectory);
+
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
 
       // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
@@ -2459,8 +2565,18 @@ void full_scenario_grasp(moveit::planning_interface::MoveGroupInterface &move_gr
       //std::chrono::seconds dura10(10);
 
 
+      move_group_interface.setStartStateToCurrentState();
 
 
+      fraction = move_group_interface.computeCartesianPath(vecULT2, eef_step, jump_threshold, trajectory, false);
+      ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+
+
+
+      move_group_interface.execute(trajectory);
+
+      visual_tools.trigger(); // to apply changes
+      visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
 
 
@@ -3681,10 +3797,14 @@ int main(int argc, char** argv)
 
   Eigen::Isometry3d tf_tcp_in_bari;
   tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
-  geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+  geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+  grasping_poses.push_back(tf_transformed);
+  tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.01);
   grasping_poses.push_back(tf_transformed);
   tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
-  tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+  tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+  grasping_poses.push_back(tf_transformed);
+  tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.01);
   grasping_poses.push_back(tf_transformed);
   //tf_transformed.header.frame_id = "bari0";
 
