@@ -2039,7 +2039,7 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
 }
 
 
-void trajecto_approch(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit_visual_tools::MoveItVisualTools &visual_tools, geometry_msgs::PoseStamped &pose_goal){
+std::vector<std::vector<double>> trajecto_approch(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, const moveit::core::JointModelGroup* joint_model_group, moveit_visual_tools::MoveItVisualTools &visual_tools, geometry_msgs::PoseStamped &pose_goal){
 
   
 
@@ -2096,6 +2096,21 @@ void trajecto_approch(moveit::planning_interface::MoveGroupInterface &move_group
   visual_tools.trigger(); // to apply changes
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
+  robot_trajectory::RobotTrajectory trajecto_state(move_group_interface.getCurrentState()->getRobotModel(), move_group_interface.getName());
+
+  trajecto_state.setRobotTrajectoryMsg(*move_group_interface.getCurrentState(), trajectory);
+
+  std::vector<std::vector<double>> trajecto_waypoint_joint;
+  for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
+  {
+
+    std::vector<double> waypoint_joint;
+    trajecto_state.getWayPointPtr(i)->copyJointGroupPositions(joint_model_group, waypoint_joint);
+    trajecto_waypoint_joint.push_back(waypoint_joint);
+  }
+
+
+  return trajecto_waypoint_joint;
 
 
 
@@ -2196,7 +2211,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
   if (ID_grasp != -1){
-    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, visual_tools, bari_poses[1][ID_grasp]);
+    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface,joint_model_group, visual_tools, bari_poses[1][ID_grasp]);
   }
 
 }
@@ -2324,7 +2339,7 @@ void trajecto_initial_to_scan_and_bari2(moveit::planning_interface::MoveGroupInt
 
 
 
-void trajecto_bari_to_scan(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
+std::vector<std::vector<double>> trajecto_bari_to_scan(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group){
 
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
   text_pose.translation().z() = 1.3;
@@ -2337,10 +2352,12 @@ void trajecto_bari_to_scan(moveit::planning_interface::MoveGroupInterface &move_
 
   std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, scan_pose, visual_tools, joint_model_group, planning_scene_interface);
 
+  return traj6;
+
 }
 
 
-void trajecto_scan_to_out(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, geometry_msgs::PoseStamped &final_pose){
+std::vector<std::vector<double>> trajecto_scan_to_out(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, geometry_msgs::PoseStamped &final_pose){
 
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
   text_pose.translation().z() = 1.3;
@@ -2353,18 +2370,56 @@ void trajecto_scan_to_out(moveit::planning_interface::MoveGroupInterface &move_g
 
   std::vector<std::vector<double>> traj6 = go_to_position(move_group_interface, final_pose, visual_tools, joint_model_group, planning_scene_interface);
 
+  return traj6;
+
 }
 
 
 
-void trajecto_bari_to_out_by_scan(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+std::vector<std::vector<double>> trajecto_bari_to_out_by_scan(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+
+  std::vector<std::vector<double>> traj0;
+  std::vector<std::vector<double>> traj1;
+  std::vector<std::vector<double>> traj2;
 
   if (ID_grasp != -1){
-    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, visual_tools, vec_grasping_poses[0][ID_grasp]);
+    traj0 = trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface,joint_model_group, visual_tools, vec_grasping_poses[0][ID_grasp]);
   }
-  trajecto_bari_to_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group);
 
-  trajecto_scan_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_pose);
+  std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+  traj1 = trajecto_bari_to_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group);
+
+  traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
+
+  std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+
+  traj2 = trajecto_scan_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_pose);
+
+  traj0.insert(traj0.end(),std::make_move_iterator(traj2.begin()),std::make_move_iterator(traj2.end()));
+
+  std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+  ROS_INFO_NAMED("tutorial", "Go to bari position from out"); 
+  //visual_tools.publishText(text_pose, "Go to bari position from out", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  //visual_tools.trigger();
+
+
+
+  std::ofstream myfile ("/home/guillaume/ws_moveit/example.txt");
+  if (myfile.is_open())
+  {
+    for (int k=0; k<traj0.size(); k++){
+      myfile << "f " << traj0[k][0] << " " << traj0[k][1] << " " << traj0[k][2] << " " << traj0[k][3] << " " << traj0[k][4] << " " << traj0[k][5] << "\n";
+    }
+    myfile.close();
+  }
+  else std::cout << "Unable to open file";
+
+  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+  return traj0;
 
 }
 
@@ -2407,7 +2462,7 @@ void trajecto_out_to_bari(moveit::planning_interface::MoveGroupInterface &move_g
   std::vector<std::vector<double>> traj5 = go_to_position(move_group_interface, vec_grasping_poses[0], ID_grasp, visual_tools, joint_model_group, planning_scene_interface);
 
   if (ID_grasp != -1){
-    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, visual_tools, vec_grasping_poses[1][ID_grasp]);
+    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, joint_model_group, visual_tools, vec_grasping_poses[1][ID_grasp]);
   }
 
 
@@ -2477,7 +2532,7 @@ void trajecto_bari_to_out(moveit::planning_interface::MoveGroupInterface &move_g
 
 
   if (ID_grasp != -1){
-    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, visual_tools, vec_grasping_poses[0][ID_grasp]);
+    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, joint_model_group, visual_tools, vec_grasping_poses[0][ID_grasp]);
   }
   move_group_interface.setStartStateToCurrentState();
 
