@@ -147,10 +147,13 @@ tf2::Quaternion random_quaternion() {
 }
 
 
-void load_bari_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+void load_bari_in_scene( moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
 
+
+  // TODO CHANGE
   //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
   std::string modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
+  //std::string modelpath = "package://geometric_shapes/test/resources/rc2.obj";
   ROS_INFO("mesh loades : %s ",modelpath.c_str());
 
   static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
@@ -185,19 +188,26 @@ void load_bari_in_scene(moveit::planning_interface::PlanningSceneInterface &plan
         // Define a pose for the box (specified relative to frame_id)
         geometry_msgs::Pose pose;
 
-        tf2::Quaternion q_rot;
+        //tf2::Quaternion q_rot;
 
-        q_rot.setRPY(1.57,3.14,-3.14);
-        //q_rot.setRPY(1.57,2.20,2.16);
+        // TODO CHANGE
+        //q_rot.setRPY(3.14,0.00,0.00); //rk
+        //q_rot.setRPY(1.57,3.14,-3.14); //bari
+        //q_rot.setRPY(1.60,1.58,-3.14); //bari
+        //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
         //q_rot = random_quaternion();
 
         // Stuff the new rotation back into the pose. This requires conversion into a msg type
-        tf2::convert(q_rot, pose.orientation);
+        //tf2::convert(q_rot, pose.orientation);
+        pose.orientation.x = -0.5;
+        pose.orientation.y = 0.5;
+        pose.orientation.z = -0.5;
+        pose.orientation.w = 0.5;
 
         //double res_x = center.x -0.5 + 0.1*xi;
-        pose.position.x = 0.5+ 0.04*xi;
-        pose.position.y = -0.05+ 0.05*yi;
-        pose.position.z = 0.15;
+        pose.position.x = -0.08+ 0.05*yi;
+        pose.position.y = -0.74+ 0.04*xi;
+        pose.position.z = 0.06;
 
         collision_object_bari.meshes.push_back(mesh_bary);
         collision_object_bari.mesh_poses.push_back(pose);
@@ -258,7 +268,7 @@ void load_bari_in_scene2(moveit::planning_interface::PlanningSceneInterface &pla
         pose.position.x = 0.5+ 0.04*xi;
         pose.position.y = -0.05+ 0.05*yi;
         pose.position.z = 0.15;
-
+        
         collision_object_bari.meshes.push_back(mesh_bary);
         collision_object_bari.mesh_poses.push_back(pose);
         collision_object_bari.operation = collision_object_bari.ADD;
@@ -276,7 +286,7 @@ void load_bari_in_scene2(moveit::planning_interface::PlanningSceneInterface &pla
 }
 
 
-void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+void load_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
 
   //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
   std::string modelpath = "package://geometric_shapes/test/resources/Contenant_barillet.stl";
@@ -303,17 +313,30 @@ void load_carton_in_scene(moveit::planning_interface::PlanningSceneInterface &pl
 
   // Define a pose for the box (specified relative to frame_id)
   geometry_msgs::Pose pose;
-  pose.orientation.x = 0.5;
-  pose.orientation.z = 0.5;
-  pose.orientation.w = 0.5;
-  pose.orientation.y = 0.5;
-  pose.position.x = 0.5;
-  pose.position.y = 0.0;
-  pose.position.z = 0.3;
+
+  tf2::Quaternion q_rot;
+
+  // TODO CHANGE
+  //q_rot.setRPY(3.14,0.00,0.00); //rk
+  //q_rot.setRPY(1.57,3.14,-3.14); //bari
+  q_rot.setRPY(1.57,0.0,0.0); //bari
+  //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
+  //q_rot = random_quaternion();
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_rot, pose.orientation);
+
+
+  pose.position.x = 0.0;
+  pose.position.y = -0.7;
+  pose.position.z = 0.2;
+
+  //visual_tools.processCollisionObjectMsg(collision_object_bari, rviz_visual_tools::BROWN);
 
   collision_object_bari.meshes.push_back(mesh_bary);
   collision_object_bari.mesh_poses.push_back(pose);
   collision_object_bari.operation = collision_object_bari.ADD;
+
 
   // shape_msgs::SolidPrimitive work_box;
   // work_box.type = work_box.BOX;
@@ -458,8 +481,8 @@ std::vector<double> go_to_position_begin(moveit::planning_interface::MoveGroupIn
   moveit_msgs::JointConstraint jc1;
   jc1.joint_name = "joint_1";  
   jc1.position = 0.0;
-  jc1.tolerance_above = 1.4; //80 degrés
-  jc1.tolerance_below = 1.4;
+  jc1.tolerance_above = 0.0; //160 degrés
+  jc1.tolerance_below = 2.8;
   jc1.weight = 1.0; 
 
   moveit_msgs::JointConstraint jc2;
@@ -885,8 +908,8 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
   moveit_msgs::JointConstraint jc1;
   jc1.joint_name = "joint_1";  
   jc1.position = 0.0;
-  jc1.tolerance_above = 1.4; //80 degrés
-  jc1.tolerance_below = 1.4;
+  jc1.tolerance_above = 0.0; //80 degrés
+  jc1.tolerance_below = 2.8;
   jc1.weight = 1.0; 
 
   moveit_msgs::JointConstraint jc2;
@@ -1170,8 +1193,8 @@ void setup_planner_test(moveit::planning_interface::MoveGroupInterface &move_gro
   moveit_msgs::JointConstraint jc1;
   jc1.joint_name = "joint_1";  
   jc1.position = 0.0;
-  jc1.tolerance_above = 1.4; //80 degrés
-  jc1.tolerance_below = 1.4;
+  jc1.tolerance_above = 0.0; //80 degrés
+  jc1.tolerance_below = 2.8;
   jc1.weight = 1.0; 
 
   moveit_msgs::JointConstraint jc2;
@@ -1905,12 +1928,14 @@ std::vector<std::vector<double>> go_to_position(moveit::planning_interface::Move
   // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
   // tf_transformed.header.frame_id = "bari0";
 
+  // for (int k=0; k<grasp_poses.size(); k++){
+  //   showFrames(grasp_poses[k], grasp_poses[k].header.frame_id);
+  //   visual_tools.publishText(text_pose, "Show target frame", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  //   visual_tools.trigger(); // to apply changes
+  //   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  // }
   if (ID_grasp != -1) {
 
-
-    std::cout<< grasp_poses[ID_grasp].pose.position.x;
-    std::cout<<" "<< grasp_poses[ID_grasp].pose.position.y;
-    std::cout<<" "<< grasp_poses[ID_grasp].pose.position.z;
 
 
     showFrames(grasp_poses[ID_grasp], grasp_poses[ID_grasp].header.frame_id);
@@ -2131,7 +2156,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   //center.x;
 
   load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
-  load_carton_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+  load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
   std::chrono::seconds dura70(70);
@@ -2177,6 +2202,9 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
 }
 
 
+
+
+
 void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<geometry_msgs::PoseStamped> &bari_poses){
 
 
@@ -2198,7 +2226,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   //center.x;
 
   load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
-  load_carton_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+  load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
   std::chrono::seconds dura70(70);
@@ -2830,9 +2858,9 @@ void full_scenario_grasp(moveit::planning_interface::MoveGroupInterface &move_gr
 
   std::chrono::seconds dura70(70);
 
-
-  //int ID_grasp = 13;
-  int ID_grasp = -1;
+  //TODO CHANGE
+  int ID_grasp = 13; //bari
+  //int ID_grasp = 1;
 
   if (ID_grasp != -1){
     vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
@@ -4177,13 +4205,13 @@ int main(int argc, char** argv)
   // scan_pose.position.x = 0.75;
   // scan_pose.position.y = 0.0;
   // scan_pose.position.z = 0.5;
-  scan_pose.pose.orientation.x = -0.65663;
-  scan_pose.pose.orientation.y = 0.25469;
-  scan_pose.pose.orientation.z = 0.25726;
-  scan_pose.pose.orientation.w = 0.66166;
-  scan_pose.pose.position.x = 0.48;
-  scan_pose.pose.position.y = -0.05;
-  scan_pose.pose.position.z = 0.51;
+  scan_pose.pose.orientation.x = -0.29956;
+  scan_pose.pose.orientation.y = 0.65046;
+  scan_pose.pose.orientation.z = -0.25386;
+  scan_pose.pose.orientation.w = 0.65018;
+  scan_pose.pose.position.x = -0.089795;
+  scan_pose.pose.position.y = -0.71612;
+  scan_pose.pose.position.z = 0.3414;
 
 
   std::vector<geometry_msgs::PoseStamped> bari_poses;
@@ -4204,9 +4232,9 @@ int main(int argc, char** argv)
         target_pose_final.pose.orientation.y = -0.35765;
         target_pose_final.pose.orientation.z = 0.0057657;
         target_pose_final.pose.orientation.w = 0.014457;
-        target_pose_final.pose.position.x = 0.45 + 0.08*xi;;
-        target_pose_final.pose.position.y = +0.35 + 0.1*yi;
-        target_pose_final.pose.position.z = 0.5;
+        target_pose_final.pose.position.x = 0.22 + 0.1*yi;
+        target_pose_final.pose.position.y = -0.80 + 0.05*xi;
+        target_pose_final.pose.position.z = 0.4;
         // target_pose_final.orientation.x = -0.65663;
         // target_pose_final.orientation.y = 0.25469;
         // target_pose_final.orientation.z = 0.25726;
@@ -4246,8 +4274,9 @@ int main(int argc, char** argv)
   std::vector<geometry_msgs::PoseStamped> grasping_poses;
   std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
 
-
+  //TODO CHANGE
   std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
+  //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
 
   if(fichier)
   {
@@ -4284,11 +4313,11 @@ int main(int argc, char** argv)
         std::cout<<", \""<<rz<<"\""<<std::endl;
         Eigen::Isometry3d tf_tcp_in_bari;
         tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
-        geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+        geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.1);
         grasping_poses.push_back(tf_transformed);
         tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
         grasping_poses_true.push_back(tf_transformed);
-        //Et on l'affiche dans la console
+        //Et on l'affiche dans la console 
         //Ou alors on fait quelque chose avec cette ligne
         //À vous de voir
     }
