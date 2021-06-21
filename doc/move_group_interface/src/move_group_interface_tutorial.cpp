@@ -285,6 +285,18 @@ void load_bari_in_scene2(moveit::planning_interface::PlanningSceneInterface &pla
 
 }
 
+tf2::Quaternion set_quentin(float rx, float ry, float rz){
+  tf2::Quaternion q_rotx;
+  q_rotx.setRotation(tf2::Vector3(1,0,0),rx);
+
+  tf2::Quaternion q_roty;
+  q_roty.setRotation(tf2::Vector3(0,1,0),ry);
+
+  tf2::Quaternion q_rotz;
+  q_rotz.setRotation(tf2::Vector3(0,0,1),rz);
+
+  return q_rotx*q_roty*q_rotz;
+}
 
 void load_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
 
@@ -357,6 +369,188 @@ void load_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools, 
   // collision_object_bari.operation = collision_object_bari.ADD;
 
   collision_object_baris.push_back(collision_object_bari);
+
+  // Now, let's add the collision object into the world
+  // (using a vector that could contain additional objects)
+  ROS_INFO_NAMED("tutorial", "Add an object into the world");
+  planning_scene_interface.addCollisionObjects(collision_object_baris);
+
+
+}
+
+
+void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+
+
+  std::vector<double> boxInsideSizeM = {0.269572, 0.184798, 0.177178};
+  std::vector<double> boxInsidePoseM = {0.0464935, -0.823521, -0.275351, 337.809, 2.13806, 59.0498};
+
+  geometry_msgs::PoseStamped tf_to_scene;
+
+  tf2::Quaternion q_rot_box;
+  q_rot_box = set_quentin(boxInsidePoseM[3]*M_PI/180.0, boxInsidePoseM[4]*M_PI/180.0, boxInsidePoseM[5]*M_PI/180.0);
+  tf2::convert(q_rot_box, tf_to_scene.pose.orientation);
+
+  tf_to_scene.pose.position.x = boxInsidePoseM[0];
+  tf_to_scene.pose.position.y = boxInsidePoseM[1];
+  tf_to_scene.pose.position.z = boxInsidePoseM[2];
+
+  Eigen::Isometry3d tf_to_scene_tot;
+  tf2::fromMsg(tf_to_scene.pose, tf_to_scene_tot); //pose in bary frame
+
+
+  std::vector<double> boxThickSideBottomM = {0.006, 0.016};
+  std::cout << "BOX" << boxInsidePoseM.size() << std::endl;
+
+
+
+  // Now let's define a collision object ROS message for the robot to avoid.
+  moveit_msgs::CollisionObject collision_object_box;
+  collision_object_box.header.frame_id = "base_link";
+  // The id of the object is used to identify it.
+  collision_object_box.id = "carton1";
+
+  shape_msgs::SolidPrimitive primitive;
+  primitive.type = primitive.BOX;
+  primitive.dimensions.resize(3);
+  primitive.dimensions[0] = boxInsideSizeM[0] + 2* boxThickSideBottomM[0];
+  primitive.dimensions[1] = boxInsideSizeM[2];
+  primitive.dimensions[2] = boxThickSideBottomM[0];
+
+  // Define a pose for the box (specified relative to frame_id)
+  geometry_msgs::Pose pose;
+
+  tf2::Quaternion q_rot;
+  q_rot = set_quentin(-90*M_PI/180.0,0.0,0.0); //bari
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_rot, pose.orientation);
+
+  pose.position.x = 0.0;
+  pose.position.y = -(boxInsideSizeM[1] / 2.0 + boxThickSideBottomM[0] / 2.0);
+  pose.position.z = 0.0;
+
+  Eigen::Isometry3d tf_carton;
+  tf2::fromMsg(pose, tf_carton); //pose in bary frame
+
+  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+
+
+
+  collision_object_box.primitives.push_back(primitive);
+  collision_object_box.primitive_poses.push_back(pose);
+  collision_object_box.operation = collision_object_box.ADD;
+
+  collision_object_baris.push_back(collision_object_box);
+//////
+
+  collision_object_box.header.frame_id = "base_link";
+  // The id of the object is used to identify it.
+  collision_object_box.id = "carton2";
+  q_rot = set_quentin(-90*M_PI/180.0,0.0,0.0); //bari
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_rot, pose.orientation);
+
+  pose.position.x = 0.0;
+  pose.position.y = (boxInsideSizeM[1] / 2.0 + boxThickSideBottomM[0] / 2.0);
+  pose.position.z = 0.0;
+
+  tf2::fromMsg(pose, tf_carton); //pose in bary frame
+  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+
+
+  collision_object_box.primitives.push_back(primitive);
+  collision_object_box.primitive_poses.push_back(pose);
+  collision_object_box.operation = collision_object_box.ADD;
+
+  collision_object_baris.push_back(collision_object_box);
+
+
+////////////////////////////////
+
+
+  collision_object_box.header.frame_id = "base_link";
+  // The id of the object is used to identify it.
+  collision_object_box.id = "carton3";
+
+  primitive.type = primitive.BOX;
+  primitive.dimensions.resize(3);
+  primitive.dimensions[0] = boxInsideSizeM[2];
+  primitive.dimensions[1] = boxInsideSizeM[1];
+  primitive.dimensions[2] = boxThickSideBottomM[0];
+
+  q_rot = set_quentin(0.0,-90*M_PI/180.0,0.0); //bari
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_rot, pose.orientation);
+
+  pose.position.x = (boxInsideSizeM[0] / 2.0 + boxThickSideBottomM[0] / 2.0);
+  pose.position.y = 0.0;
+  pose.position.z = 0.0;
+
+  tf2::fromMsg(pose, tf_carton); //pose in bary frame
+  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+
+  collision_object_box.primitives.push_back(primitive);
+  collision_object_box.primitive_poses.push_back(pose);
+  collision_object_box.operation = collision_object_box.ADD;
+
+  collision_object_baris.push_back(collision_object_box);
+//////
+
+  collision_object_box.header.frame_id = "base_link";
+  // The id of the object is used to identify it.
+  collision_object_box.id = "carton4";
+  q_rot = set_quentin(0.0,-90*M_PI/180.0,0.0); //bari
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_rot, pose.orientation);
+
+  pose.position.x = -(boxInsideSizeM[0] / 2.0 + boxThickSideBottomM[0] / 2.0);
+  pose.position.y = 0.0;
+  pose.position.z = 0.0;
+
+  tf2::fromMsg(pose, tf_carton); //pose in bary frame
+  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+
+  collision_object_box.primitives.push_back(primitive);
+  collision_object_box.primitive_poses.push_back(pose);
+  collision_object_box.operation = collision_object_box.ADD;
+
+  collision_object_baris.push_back(collision_object_box);
+
+/////////////////////////////////////////
+
+  collision_object_box.header.frame_id = "base_link";
+  // The id of the object is used to identify it.
+  collision_object_box.id = "carton5";
+
+  primitive.type = primitive.BOX;
+  primitive.dimensions.resize(3);
+  primitive.dimensions[0] = boxInsideSizeM[0] + 2* boxThickSideBottomM[0];
+  primitive.dimensions[1] = boxInsideSizeM[1] + 2* boxThickSideBottomM[0];
+  primitive.dimensions[2] = boxThickSideBottomM[1];
+
+  q_rot = set_quentin(0.0,0.0,0.0); //bari
+
+  // Stuff the new rotation back into the pose. This requires conversion into a msg type
+  tf2::convert(q_rot, pose.orientation);
+
+  pose.position.x = 0.0;
+  pose.position.y = 0.0;
+  pose.position.z = -(boxInsideSizeM[2] + boxThickSideBottomM[1])/ 2.0;
+
+  tf2::fromMsg(pose, tf_carton); //pose in bary frame
+  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+
+
+  collision_object_box.primitives.push_back(primitive);
+  collision_object_box.primitive_poses.push_back(pose);
+  collision_object_box.operation = collision_object_box.ADD;
+
+  collision_object_baris.push_back(collision_object_box);
+
 
   // Now, let's add the collision object into the world
   // (using a vector that could contain additional objects)
@@ -1464,18 +1658,7 @@ EigenSTL::vector_Vector3d evaluate_plan(moveit::planning_interface::MoveGroupInt
 }
 
 
-tf2::Quaternion set_quentin(float rx, float ry, float rz){
-  tf2::Quaternion q_rotx;
-  q_rotx.setRotation(tf2::Vector3(1,0,0),rx);
 
-  tf2::Quaternion q_roty;
-  q_roty.setRotation(tf2::Vector3(0,1,0),ry);
-
-  tf2::Quaternion q_rotz;
-  q_rotz.setRotation(tf2::Vector3(0,0,1),rz);
-
-  return q_rotx*q_roty*q_rotz;
-}
 
 
 geometry_msgs::PoseStamped link6_in_bari_grasp( Eigen::Isometry3d tf_tcp_in_bari, float recul){
@@ -2171,7 +2354,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   //center.x;
 
   load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
-  load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
+  create_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
   std::chrono::seconds dura70(70);
@@ -2241,7 +2424,7 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   //center.x;
 
   load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
-  load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
+  create_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
   std::chrono::seconds dura70(70);
@@ -2411,7 +2594,7 @@ std::vector<std::vector<double>> trajecto_bari_to_out_by_scan(moveit::planning_i
   if (myfile.is_open())
   {
     for (int k=0; k<traj0.size(); k++){
-      myfile << "f " << traj0[k][0] << " " << traj0[k][1] << " " << traj0[k][2] << " " << traj0[k][3] << " " << traj0[k][4] << " " << traj0[k][5] << "\n";
+      myfile << "f " << traj0[k][0]*180.0/M_PI << " " << traj0[k][1]*180.0/M_PI  << " " << traj0[k][2]*180.0/M_PI  << " " << traj0[k][3]*180.0/M_PI  << " " << traj0[k][4]*180.0/M_PI  << " " << traj0[k][5]*180.0/M_PI  << "\n";
     }
     myfile.close();
   }
