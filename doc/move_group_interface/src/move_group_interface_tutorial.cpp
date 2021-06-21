@@ -385,6 +385,15 @@ void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools
   std::vector<double> boxInsideSizeM = {0.269572, 0.184798, 0.177178};
   std::vector<double> boxInsidePoseM = {0.0464935, -0.823521, -0.275351, 337.809, 2.13806, 59.0498};
 
+  geometry_msgs::PoseStamped base_link_moveit_to_halcon;
+  base_link_moveit_to_halcon.pose.position.x = 0.0;
+  base_link_moveit_to_halcon.pose.position.y = 0.0;
+  base_link_moveit_to_halcon.pose.position.z = 0.478;
+
+  Eigen::Isometry3d tf_base_link_moveit_to_halcon;
+  tf2::fromMsg(base_link_moveit_to_halcon.pose, tf_base_link_moveit_to_halcon); //pose in bary frame
+
+
   geometry_msgs::PoseStamped tf_to_scene;
 
   tf2::Quaternion q_rot_box;
@@ -433,7 +442,7 @@ void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools
   Eigen::Isometry3d tf_carton;
   tf2::fromMsg(pose, tf_carton); //pose in bary frame
 
-  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+  pose = tf2::toMsg(tf_to_scene_tot * tf_base_link_moveit_to_halcon * tf_carton); //world to bary * pose in bary = pose in world
 
 
 
@@ -457,7 +466,7 @@ void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools
   pose.position.z = 0.0;
 
   tf2::fromMsg(pose, tf_carton); //pose in bary frame
-  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+  pose = tf2::toMsg(tf_to_scene_tot * tf_base_link_moveit_to_halcon * tf_carton); //world to bary * pose in bary = pose in world
 
 
   collision_object_box.primitives.push_back(primitive);
@@ -490,7 +499,7 @@ void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools
   pose.position.z = 0.0;
 
   tf2::fromMsg(pose, tf_carton); //pose in bary frame
-  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+  pose = tf2::toMsg(tf_to_scene_tot * tf_base_link_moveit_to_halcon * tf_carton); //world to bary * pose in bary = pose in world
 
   collision_object_box.primitives.push_back(primitive);
   collision_object_box.primitive_poses.push_back(pose);
@@ -512,7 +521,7 @@ void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools
   pose.position.z = 0.0;
 
   tf2::fromMsg(pose, tf_carton); //pose in bary frame
-  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+  pose = tf2::toMsg(tf_to_scene_tot * tf_base_link_moveit_to_halcon * tf_carton); //world to bary * pose in bary = pose in world
 
   collision_object_box.primitives.push_back(primitive);
   collision_object_box.primitive_poses.push_back(pose);
@@ -542,7 +551,7 @@ void create_carton_in_scene(moveit_visual_tools::MoveItVisualTools &visual_tools
   pose.position.z = -(boxInsideSizeM[2] + boxThickSideBottomM[1])/ 2.0;
 
   tf2::fromMsg(pose, tf_carton); //pose in bary frame
-  pose = tf2::toMsg(tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+  pose = tf2::toMsg(tf_to_scene_tot * tf_base_link_moveit_to_halcon * tf_carton ); //world to bary * pose in bary = pose in world
 
 
   collision_object_box.primitives.push_back(primitive);
