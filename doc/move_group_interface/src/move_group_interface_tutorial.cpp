@@ -159,25 +159,28 @@ tf2::Quaternion set_quentin(float rx, float ry, float rz){
   return q_rotx*q_roty*q_rotz;
 }
 
-void fill_vector_cin(std::vector<double>& boxInsideSizeM){
+void fill_vector_cin(std::vector<double>& boxInsideSizeM, std::string info){
 
-  std::string line;
+  std::string line = "";
   double number;
-
-  std::cout << "Enter numbers separated by spaces: ";
-  std::getline(std::cin, line);
-  std::cout << line << std::endl;
-  std::istringstream stream(line);
-  while (stream >> number)
+  while (line == ""){
+    std::cout << info << std::endl;
+    std::cout << "Enter numbers separated by spaces: ";
+    std::getline(std::cin, line);
+    std::cout << line << std::endl;
+    std::istringstream stream(line);
+    while (stream >> number){
+      std::cout<<"nombre"<<number<<std::endl;
       boxInsideSizeM.push_back(number);
-
+    }
+  }
 }
 
 
 geometry_msgs::PoseStamped get_pose(std::string info){
   std::vector<double> vector_quentin;// = {0.269572 0.184798 0.177178};
-  std::cout << info << std::endl;
-  fill_vector_cin(vector_quentin);
+
+  fill_vector_cin(vector_quentin, info);
 
   geometry_msgs::PoseStamped pose;
 
@@ -293,7 +296,7 @@ void load_bari_in_scene( moveit::planning_interface::PlanningSceneInterface &pla
 
 }
 
-void load_bari_in_scene_robot( moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+void load_bari_in_scene_robot( moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris){
 
 
   // TODO CHANGE
@@ -2470,7 +2473,7 @@ void trajecto_scan_to_bari(moveit::planning_interface::MoveGroupInterface &move_
 
 
 
-void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<std::vector<geometry_msgs::PoseStamped>> &bari_poses, int ID_grasp){
+void trajecto_initial_to_scan_and_bari_robot(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<std::vector<geometry_msgs::PoseStamped>> &bari_poses, int ID_grasp){
 
 
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2494,14 +2497,15 @@ void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInte
   //load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
   //load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
-  load_bari_in_scene_robot(planning_scene_interface, move_group_interface, collision_object_baris, center);
-
 
   std::vector<double> boxInsideSizeM;// = {0.269572 0.184798 0.177178};
-  std::vector<double> boxInsidePoseM = {0.0464935, -0.823521, -0.275351, 337.809, 2.13806, 59.0498};
-  std::vector<double> boxThickSideBottomM = {0.006, 0.016};
+  std::vector<double> boxInsidePoseM;// = {0.0464935, -0.823521, -0.275351, 337.809, 2.13806, 59.0498};
+  std::vector<double> boxThickSideBottomM;// = {0.006, 0.016};
 
-  fill_vector_cin(boxInsideSizeM);
+  fill_vector_cin(boxInsideSizeM, "please give the size of the inside of the box in 1 line : tx ty tz");
+  fill_vector_cin(boxInsidePoseM, "please give the POSE of the inside of the box in 1 line : tx ty tz rx ry rz");
+  fill_vector_cin(boxThickSideBottomM, "please give the size of the wall of the box in 1 line : tx ty");
+
 
   create_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, boxInsideSizeM, boxInsidePoseM, boxThickSideBottomM );
 
@@ -3245,9 +3249,18 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
 
   std::chrono::seconds dura70(70);
 
+
+
+  //go to jinit
+
+  load_bari_in_scene_robot(planning_scene_interface, move_group_interface, collision_object_baris);
+
   //TODO CHANGE
-  int ID_grasp = 13; //bari
+  int ID_grasp;// = 13; //bari
   //int ID_grasp = 1;
+  std::cout << "give the ID_grasp (-1 if you want to let moveit choose) : " ;
+  std::cin >> ID_grasp ;
+  std::cout << "ID_grasp " << ID_grasp << std::endl ;
 
   if (ID_grasp != -1){
     vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
@@ -3260,9 +3273,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
     }
   }
 
-  //go to jinit
-
-  trajecto_initial_to_scan_and_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, vec_grasping_poses, ID_grasp);
+  trajecto_initial_to_scan_and_bari_robot( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, vec_grasping_poses, ID_grasp);
 
   setup_planner(move_group_interface);
 
@@ -3275,7 +3286,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
     // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
     // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
     ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1));
-    move_group_interface.attachObject(collision_object_baris[i*(N+1)].id, "link_tool");
+    move_group_interface.attachObject("bari0", "link_tool");
 
     //moveit_msgs::AttachedCollisionObject aco;
     //aco.object.id = collision_object_baris[0].id;
@@ -3353,7 +3364,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
     
     // //planning_scene_interface.applyCollisionObject()
 
-    trajecto_bari_to_out_by_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+    trajecto_bari_to_out_by_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[0], vec_grasping_poses, ID_grasp);
 
 
     // The result may look something like this:
@@ -3366,7 +3377,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
     //
     // Now, let's detach the cylinder from the robot's gripper.
     ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i*(N+1));
-    move_group_interface.detachObject(collision_object_baris[i*(N+1)].id);
+    move_group_interface.detachObject("bari0");
 
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -3399,16 +3410,22 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
 
       move_group_interface.setStartState(*move_group_interface.getCurrentState());
 
+      load_bari_in_scene_robot(planning_scene_interface, move_group_interface, collision_object_baris);
+
+
+      std::cout << "give the ID_grasp (-1 if you want to let moveit choose) : " ;
+      std::cin >> ID_grasp ;
+      std::cout << "ID_grasp " << ID_grasp << std::endl ;
 
       std::cout<< "id bari : " << collision_object_baris[i*(N+1) + j + 1].id << std::endl;
       if (ID_grasp != -1){
-        vec_grasping_poses[0][ID_grasp].header.frame_id = collision_object_baris[i*(N+1) + j + 1].id;
-        vec_grasping_poses[1][ID_grasp].header.frame_id = collision_object_baris[i*(N+1) + j + 1].id;
+        vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
+        vec_grasping_poses[1][ID_grasp].header.frame_id = "bari0";
       }
       else{
         for (int k=0; k<vec_grasping_poses[0].size(); k++){
-          vec_grasping_poses[0][k].header.frame_id = collision_object_baris[i*(N+1) + j + 1].id;
-          vec_grasping_poses[1][k].header.frame_id = collision_object_baris[i*(N+1) + j + 1].id;
+          vec_grasping_poses[0][k].header.frame_id = "bari0";
+          vec_grasping_poses[1][k].header.frame_id = "bari0";
         }
       }
 
@@ -3419,15 +3436,12 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
       // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
       ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1) + j + 1);
 
-      move_group_interface.attachObject(collision_object_baris[i*(N+1) + j + 1].id, "link_tool");
+      move_group_interface.attachObject("bari0", "link_tool");
 
       visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
       visual_tools.trigger();
 
       //std::chrono::seconds dura10(10);
-
-
-      move_group_interface.setStartStateToCurrentState();
 
 
 
@@ -3463,7 +3477,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
       // Replan, but now with the object in hand.
       move_group_interface.setStartStateToCurrentState();
 
-      trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group,vec_grasping_poses, ID_grasp, final_poses[i*(N+1) + j + 1]);
+      trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group,vec_grasping_poses, ID_grasp, final_poses[0]);
 
 
       // The result may look something like this:
@@ -3476,7 +3490,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
       //
       // Now, let's detach the cylinder from the robot's gripper.
       ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i*(N+1) + j + 1);
-      move_group_interface.detachObject(collision_object_baris[i*(N+1) + j + 1].id);
+      move_group_interface.detachObject("bari0");
 
 
 
@@ -3510,13 +3524,13 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
     std::cout<< "id bari : " << collision_object_baris[i*(N+1) + N + 1].id << std::endl;
 
     if (ID_grasp != -1){
-      vec_grasping_poses[0][ID_grasp].header.frame_id = collision_object_baris[i*(N+1) + N + 1].id;
-      vec_grasping_poses[1][ID_grasp].header.frame_id = collision_object_baris[i*(N+1) + N + 1].id;
+      vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
+      vec_grasping_poses[1][ID_grasp].header.frame_id = "bari0";
     }
     else{
       for (int k=0; k<vec_grasping_poses[0].size(); k++){
-        vec_grasping_poses[0][k].header.frame_id = collision_object_baris[i*(N+1) + N + 1].id;
-        vec_grasping_poses[1][k].header.frame_id = collision_object_baris[i*(N+1) + N + 1].id;
+        vec_grasping_poses[0][k].header.frame_id = "bari0";
+        vec_grasping_poses[1][k].header.frame_id = "bari0";
       }
     }
 
@@ -3527,7 +3541,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
     // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
     ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1) + N + 1);
 
-    move_group_interface.attachObject(collision_object_baris[i*(N+1) + N + 1].id, "link_tool");
+    move_group_interface.attachObject("bari0", "link_tool");
 
     visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     visual_tools.trigger();
@@ -3583,7 +3597,7 @@ void full_scenario_grasp_robot(moveit::planning_interface::MoveGroupInterface &m
   //
   // Now, let's detach the cylinder from the robot's gripper.
   ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", (M-1)*(N+1) + N + 1);
-  move_group_interface.detachObject(collision_object_baris[(M-1)*(N+1) + N + 1].id);
+  move_group_interface.detachObject("bari0");
 
   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -3647,7 +3661,7 @@ void full_scenario_grasp(moveit::planning_interface::MoveGroupInterface &move_gr
     }
   }
 
-  trajecto_initial_to_scan_and_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, vec_grasping_poses, ID_grasp);
+  trajecto_initial_to_scan_and_bari_robot( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, vec_grasping_poses, ID_grasp);
 
   setup_planner(move_group_interface);
 
@@ -5006,7 +5020,7 @@ int main(int argc, char** argv)
         target_pose_final.pose.orientation.w = 0.014457;
         target_pose_final.pose.position.x = 0.22 + 0.1*yi + 0.1;
         target_pose_final.pose.position.y = -0.80 + 0.05*xi;
-        target_pose_final.pose.position.z = 0.0;
+        target_pose_final.pose.position.z = 0.4;
         // target_pose_final.orientation.x = -0.65663;
         // target_pose_final.orientation.y = 0.25469;
         // target_pose_final.orientation.z = 0.25726;
