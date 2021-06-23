@@ -1180,9 +1180,9 @@ void setup_planner(moveit::planning_interface::MoveGroupInterface &move_group_in
 
   //move_group_interface.setPlannerParams(planner_id, "arm_group", parametre);
 
+  move_group_interface.setNumPlanningAttempts(3);
 
-
-  move_group_interface.setPlanningTime(0.5);
+  move_group_interface.setPlanningTime(0.3);
   /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
       Allowed values are in (0,1]. The maximum joint velocity specified
       in the robot model is multiplied by the factor. If the value is 0, it is set to
@@ -2473,6 +2473,72 @@ void trajecto_scan_to_bari(moveit::planning_interface::MoveGroupInterface &move_
 
 
 
+void trajecto_initial_to_scan_and_bari(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<std::vector<geometry_msgs::PoseStamped>> &bari_poses, int ID_grasp){
+
+
+  Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
+  text_pose.translation().z() = 1.3;
+
+  move_group_interface.setStartState(*move_group_interface.getCurrentState());
+
+
+  std::vector<double> traj1 = go_to_position_begin(move_group_interface, scan_pose, visual_tools, joint_model_group, planning_scene_interface);
+
+  visual_tools.publishText(text_pose, "Go to scan position from origin", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  visual_tools.trigger();
+
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+  const Eigen::Vector3d center(0.5,0.0,0.0);
+  //center.x;
+
+  load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+  load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
+
+
+  std::chrono::seconds dura70(70);
+
+  // Now, let's add the collision object into the world
+  // (using a vector that could contain additional objects)
+  //ROS_INFO_NAMED("tutorial", "Add an object into the world");
+  //planning_scene_interface.addCollisionObjects(collision_objects);
+
+  // Show text in RViz of status and wait for MoveGroup to receive and process the collision object message
+  visual_tools.publishText(text_pose, "Add object", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  visual_tools.trigger();
+
+
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
+
+
+
+
+  visual_tools.deleteAllMarkers();
+  visual_tools.publishText(text_pose, " current : show bari position", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+  //visual_tools.publishAxisLabeled(bari_poses[0], "bari_pose");
+  visual_tools.trigger(); // to apply changes
+
+
+
+
+
+
+
+
+  move_group_interface.setStartState(*move_group_interface.getCurrentState());
+
+
+  trajecto_scan_to_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses, ID_grasp);
+
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+  if (ID_grasp != -1){
+    trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, joint_model_group, visual_tools, bari_poses[1][ID_grasp]);
+  }
+
+}
+
 void trajecto_initial_to_scan_and_bari_robot(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<std::vector<geometry_msgs::PoseStamped>> &bari_poses, int ID_grasp){
 
 
@@ -3661,7 +3727,7 @@ void full_scenario_grasp(moveit::planning_interface::MoveGroupInterface &move_gr
     }
   }
 
-  trajecto_initial_to_scan_and_bari_robot( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, vec_grasping_poses, ID_grasp);
+  trajecto_initial_to_scan_and_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, vec_grasping_poses, ID_grasp);
 
   setup_planner(move_group_interface);
 
@@ -4982,21 +5048,21 @@ int main(int argc, char** argv)
   geometry_msgs::PoseStamped scan_pose;
   scan_pose.header.frame_id = "base_link";
 
-  // scan_pose.pose.orientation.x = -0.29956;
-  // scan_pose.pose.orientation.y = 0.65046;
-  // scan_pose.pose.orientation.z = -0.25386;
-  // scan_pose.pose.orientation.w = 0.65018;
-  // scan_pose.pose.position.x = -0.089795;
-  // scan_pose.pose.position.y = -0.71612;
-  // scan_pose.pose.position.z = 0.3414;
+  scan_pose.pose.orientation.x = -0.29956;
+  scan_pose.pose.orientation.y = 0.65046;
+  scan_pose.pose.orientation.z = -0.25386;
+  scan_pose.pose.orientation.w = 0.65018;
+  scan_pose.pose.position.x = -0.089795;
+  scan_pose.pose.position.y = -0.71612;
+  scan_pose.pose.position.z = 0.3414;
 
-  scan_pose.pose.orientation.x = -0.64772;
-  scan_pose.pose.orientation.y = 0.48432;
-  scan_pose.pose.orientation.z = -0.011464;
-  scan_pose.pose.orientation.w = 0.58802;
-  scan_pose.pose.position.x = 0.021464;
-  scan_pose.pose.position.y = -0.64255;
-  scan_pose.pose.position.z = 0.42707;
+  // scan_pose.pose.orientation.x = -0.64772;
+  // scan_pose.pose.orientation.y = 0.48432;
+  // scan_pose.pose.orientation.z = -0.011464;
+  // scan_pose.pose.orientation.w = 0.58802;
+  // scan_pose.pose.position.x = 0.021464;
+  // scan_pose.pose.position.y = -0.64255;
+  // scan_pose.pose.position.z = 0.42707;
 
 
 
@@ -5018,7 +5084,7 @@ int main(int argc, char** argv)
         target_pose_final.pose.orientation.y = -0.35765;
         target_pose_final.pose.orientation.z = 0.0057657;
         target_pose_final.pose.orientation.w = 0.014457;
-        target_pose_final.pose.position.x = 0.22 + 0.1*yi + 0.1;
+        target_pose_final.pose.position.x = 0.22 + 0.1*yi ;
         target_pose_final.pose.position.y = -0.80 + 0.05*xi;
         target_pose_final.pose.position.z = 0.4;
         // target_pose_final.orientation.x = -0.65663;
@@ -5149,9 +5215,9 @@ int main(int argc, char** argv)
 
   //full_scenario( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, grasping_poses, M, N);
 
-  //full_scenario_grasp( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
+  full_scenario_grasp( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
 
-  full_scenario_grasp_robot( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
+  //full_scenario_grasp_robot( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
 
 
 
