@@ -215,26 +215,18 @@ public:
     pose.pose.position.y = vector_quentin[1];
     pose.pose.position.z = vector_quentin[2];
 
-
-
     geometry_msgs::PoseStamped base_link_moveit_to_halcon;
     base_link_moveit_to_halcon.pose.position.x = 0.0;
     base_link_moveit_to_halcon.pose.position.y = 0.0;
     base_link_moveit_to_halcon.pose.position.z = 0.478;
 
-
     Eigen::Isometry3d tf_base_link_moveit_to_halcon;
     tf2::fromMsg(base_link_moveit_to_halcon.pose, tf_base_link_moveit_to_halcon); //pose in bary frame
-
-
 
     Eigen::Isometry3d tf_pose;
     tf2::fromMsg(pose.pose, tf_pose); //pose in bary frame
 
-
     pose.pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_pose); //world to bary * pose in bary = pose in world
-
-
 
     return pose;
 
@@ -2753,12 +2745,179 @@ public:
 
 
 
-  void full_scenario(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses,std::vector<geometry_msgs::PoseStamped> &grasping_poses, int M, int N){
+  void full_scenario(int M, int N){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
 
-    std::chrono::seconds dura70(70);
+
+    // Start the demo
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Adding objects to the environment
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //
+    // First let's plan to another simple goal with no objects in the way.
+
+    geometry_msgs::PoseStamped scan_pose;
+    scan_pose.header.frame_id = "base_link";
+
+    scan_pose.pose.orientation.x = -0.29956;
+    scan_pose.pose.orientation.y = 0.65046;
+    scan_pose.pose.orientation.z = -0.25386;
+    scan_pose.pose.orientation.w = 0.65018;
+    scan_pose.pose.position.x = -0.089795;
+    scan_pose.pose.position.y = -0.71612;
+    scan_pose.pose.position.z = 0.3414;
+
+    // scan_pose.pose.orientation.x = -0.64772;
+    // scan_pose.pose.orientation.y = 0.48432;
+    // scan_pose.pose.orientation.z = -0.011464;
+    // scan_pose.pose.orientation.w = 0.58802;
+    // scan_pose.pose.position.x = 0.021464;
+    // scan_pose.pose.position.y = -0.64255;
+    // scan_pose.pose.position.z = 0.42707;
+
+
+
+    std::vector<geometry_msgs::PoseStamped> bari_poses;
+    std::vector<geometry_msgs::PoseStamped> final_poses;
+
+
+    int N_bari_x = 2;
+    int N_bari_y = 4;
+    int N_bari_z = 1;
+    for (int xi = 0; xi< N_bari_x;xi++){
+      for (int yi = 0; yi< N_bari_y;yi++){
+        for (int zi = 0; zi< N_bari_z;zi++){
+
+
+          geometry_msgs::PoseStamped target_pose_final;
+          target_pose_final.header.frame_id = "base_link";
+          target_pose_final.pose.orientation.x = 0.93373;
+          target_pose_final.pose.orientation.y = -0.35765;
+          target_pose_final.pose.orientation.z = 0.0057657;
+          target_pose_final.pose.orientation.w = 0.014457;
+          target_pose_final.pose.position.x = 0.22 + 0.1*yi ;
+          target_pose_final.pose.position.y = -0.80 + 0.05*xi;
+          target_pose_final.pose.position.z = 0.4;
+          // target_pose_final.orientation.x = -0.65663;
+          // target_pose_final.orientation.y = 0.25469;
+          // target_pose_final.orientation.z = 0.25726;
+          // target_pose_final.orientation.w = 0.66166;
+          // target_pose_final.position.x = 0.48;
+          // target_pose_final.position.y = -0.05;
+          // target_pose_final.position.z = 0.51;
+
+          final_poses.push_back(target_pose_final);
+
+
+          geometry_msgs::PoseStamped bari_pose;
+          bari_pose.header.frame_id = "base_link";
+
+          bari_pose.pose.orientation.x = 0.93373;
+          bari_pose.pose.orientation.y = -0.35765;
+          bari_pose.pose.orientation.z = 0.0057657;
+          bari_pose.pose.orientation.w = 0.014457;
+          bari_pose.pose.position.x = 0.5+ 0.04*xi;
+          bari_pose.pose.position.y = -0.05 -0.04+ 0.05*yi;
+          bari_pose.pose.position.z = 0.53731+0.02;
+          // bari_pose.orientation.x = 0.93373;
+          // bari_pose.orientation.y = -0.35765;
+          // bari_pose.orientation.z = 0.0057657;
+          // bari_pose.orientation.w = 0.014457;
+          // bari_pose.position.x = 0.5;
+          // bari_pose.position.y = -0.05 -0.04;
+          // bari_pose.position.z = 0.53731+0.02;
+      
+          bari_poses.push_back(bari_pose);
+
+        }
+      }
+    }
+
+    std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
+
+    //TODO CHANGE
+    std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
+    //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
+
+    if(fichier)
+    {
+      //L'ouverture s'est bien passée, on peut donc lire
+
+      std::string ligne; //Une variable pour stocker les lignes lues
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+
+
+      while(getline(fichier, ligne)) //Tant qu'on n'est pas à la fin, on lit
+      {
+          std::stringstream ss(ligne);
+
+          std::cout << ligne << std::endl;
+          std::string tx, ty, tz, rx, ry, rz;
+          std::getline(ss,tx,',');    
+          std::cout<<"\""<<tx<<"\""<<std::endl;
+          std::getline(ss,ty,','); 
+          std::cout<<", \""<<ty<<"\""<<std::endl;
+          std::getline(ss,tz,','); 
+          std::cout<<", \""<<tz<<"\""<<std::endl;
+          std::getline(ss,rx,',');    
+          std::cout<<"\""<<rx<<"\""<<std::endl;
+          std::getline(ss,ry,','); 
+          std::cout<<", \""<<ry<<"\""<<std::endl;
+          std::getline(ss,rz,','); 
+          std::cout<<", \""<<rz<<"\""<<std::endl;
+          Eigen::Isometry3d tf_tcp_in_bari;
+          tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
+          geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.1);
+          grasping_poses.push_back(tf_transformed);
+          tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+          grasping_poses_true.push_back(tf_transformed);
+          //Et on l'affiche dans la console 
+          //Ou alors on fait quelque chose avec cette ligne
+          //À vous de voir
+      }
+    }
+    else
+    {
+      std::cout << "ERREUR: Impossible d'ouvrir le fichier en lecture." << std::endl;
+    }
+
+
+
+
+
+    // Eigen::Isometry3d tf_tcp_in_bari;
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    std::cout<<grasping_poses.size()<<std::endl;
+    vec_grasping_poses.push_back(grasping_poses);
+    vec_grasping_poses.push_back(grasping_poses_true);
+
+
+    //tf_transformed.header.frame_id = "bari0";
+
+
+
+    std::vector<moveit_msgs::CollisionObject> collision_object_baris;
+
 
     trajecto_initial_to_scan_and_bari(collision_object_baris, scan_pose, bari_poses);
 
@@ -3096,12 +3255,178 @@ public:
   }
 
 
-  void full_scenario_grasp_robot(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int M, int N){
+  void full_scenario_grasp_robot(int M, int N){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
 
-    std::chrono::seconds dura70(70);
+
+    // Start the demo
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Adding objects to the environment
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //
+    // First let's plan to another simple goal with no objects in the way.
+
+    geometry_msgs::PoseStamped scan_pose;
+    scan_pose.header.frame_id = "base_link";
+
+    // scan_pose.pose.orientation.x = -0.29956;
+    // scan_pose.pose.orientation.y = 0.65046;
+    // scan_pose.pose.orientation.z = -0.25386;
+    // scan_pose.pose.orientation.w = 0.65018;
+    // scan_pose.pose.position.x = -0.089795;
+    // scan_pose.pose.position.y = -0.71612;
+    // scan_pose.pose.position.z = 0.3414;
+
+    scan_pose.pose.orientation.x = -0.64772;
+    scan_pose.pose.orientation.y = 0.48432;
+    scan_pose.pose.orientation.z = -0.011464;
+    scan_pose.pose.orientation.w = 0.58802;
+    scan_pose.pose.position.x = 0.021464;
+    scan_pose.pose.position.y = -0.64255;
+    scan_pose.pose.position.z = 0.42707;
+
+
+
+    std::vector<geometry_msgs::PoseStamped> bari_poses;
+    std::vector<geometry_msgs::PoseStamped> final_poses;
+
+
+    int N_bari_x = 2;
+    int N_bari_y = 4;
+    int N_bari_z = 1;
+    for (int xi = 0; xi< N_bari_x;xi++){
+      for (int yi = 0; yi< N_bari_y;yi++){
+        for (int zi = 0; zi< N_bari_z;zi++){
+
+
+          geometry_msgs::PoseStamped target_pose_final;
+          target_pose_final.header.frame_id = "base_link";
+          target_pose_final.pose.orientation.x = 0.93373;
+          target_pose_final.pose.orientation.y = -0.35765;
+          target_pose_final.pose.orientation.z = 0.0057657;
+          target_pose_final.pose.orientation.w = 0.014457;
+          target_pose_final.pose.position.x = 0.22 + 0.1*yi + 0.1 ;
+          target_pose_final.pose.position.y = -0.80 + 0.05*xi;
+          target_pose_final.pose.position.z = 0.4;
+          // target_pose_final.orientation.x = -0.65663;
+          // target_pose_final.orientation.y = 0.25469;
+          // target_pose_final.orientation.z = 0.25726;
+          // target_pose_final.orientation.w = 0.66166;
+          // target_pose_final.position.x = 0.48;
+          // target_pose_final.position.y = -0.05;
+          // target_pose_final.position.z = 0.51;
+
+          final_poses.push_back(target_pose_final);
+
+
+          geometry_msgs::PoseStamped bari_pose;
+          bari_pose.header.frame_id = "base_link";
+
+          bari_pose.pose.orientation.x = 0.93373;
+          bari_pose.pose.orientation.y = -0.35765;
+          bari_pose.pose.orientation.z = 0.0057657;
+          bari_pose.pose.orientation.w = 0.014457;
+          bari_pose.pose.position.x = 0.5+ 0.04*xi;
+          bari_pose.pose.position.y = -0.05 -0.04+ 0.05*yi;
+          bari_pose.pose.position.z = 0.53731+0.02;
+          // bari_pose.orientation.x = 0.93373;
+          // bari_pose.orientation.y = -0.35765;
+          // bari_pose.orientation.z = 0.0057657;
+          // bari_pose.orientation.w = 0.014457;
+          // bari_pose.position.x = 0.5;
+          // bari_pose.position.y = -0.05 -0.04;
+          // bari_pose.position.z = 0.53731+0.02;
+      
+          bari_poses.push_back(bari_pose);
+
+        }
+      }
+    }
+
+    std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
+
+    //TODO CHANGE
+    std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
+    //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
+
+    if(fichier)
+    {
+      //L'ouverture s'est bien passée, on peut donc lire
+
+      std::string ligne; //Une variable pour stocker les lignes lues
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+
+
+      while(getline(fichier, ligne)) //Tant qu'on n'est pas à la fin, on lit
+      {
+          std::stringstream ss(ligne);
+
+          std::cout << ligne << std::endl;
+          std::string tx, ty, tz, rx, ry, rz;
+          std::getline(ss,tx,',');    
+          std::cout<<"\""<<tx<<"\""<<std::endl;
+          std::getline(ss,ty,','); 
+          std::cout<<", \""<<ty<<"\""<<std::endl;
+          std::getline(ss,tz,','); 
+          std::cout<<", \""<<tz<<"\""<<std::endl;
+          std::getline(ss,rx,',');    
+          std::cout<<"\""<<rx<<"\""<<std::endl;
+          std::getline(ss,ry,','); 
+          std::cout<<", \""<<ry<<"\""<<std::endl;
+          std::getline(ss,rz,','); 
+          std::cout<<", \""<<rz<<"\""<<std::endl;
+          Eigen::Isometry3d tf_tcp_in_bari;
+          tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
+          geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.1);
+          grasping_poses.push_back(tf_transformed);
+          tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+          grasping_poses_true.push_back(tf_transformed);
+          //Et on l'affiche dans la console 
+          //Ou alors on fait quelque chose avec cette ligne
+          //À vous de voir
+      }
+    }
+    else
+    {
+      std::cout << "ERREUR: Impossible d'ouvrir le fichier en lecture." << std::endl;
+    }
+
+
+
+
+
+    // Eigen::Isometry3d tf_tcp_in_bari;
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    std::cout<<grasping_poses.size()<<std::endl;
+    vec_grasping_poses.push_back(grasping_poses);
+    vec_grasping_poses.push_back(grasping_poses_true);
+
+
+    //tf_transformed.header.frame_id = "bari0";
+
+
+
+    std::vector<moveit_msgs::CollisionObject> collision_object_baris;
 
 
 
@@ -3493,12 +3818,171 @@ public:
   }
 
 
-  void full_scenario_grasp(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses,std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int M, int N){
+  void full_scenario_grasp( int M, int N){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
 
-    std::chrono::seconds dura70(70);
+    // Start the demo
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^
+    // Adding objects to the environment
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //
+    // First let's plan to another simple goal with no objects in the way.
+
+    geometry_msgs::PoseStamped scan_pose;
+    scan_pose.header.frame_id = "base_link";
+
+    scan_pose.pose.orientation.x = -0.29956;
+    scan_pose.pose.orientation.y = 0.65046;
+    scan_pose.pose.orientation.z = -0.25386;
+    scan_pose.pose.orientation.w = 0.65018;
+    scan_pose.pose.position.x = -0.089795;
+    scan_pose.pose.position.y = -0.71612;
+    scan_pose.pose.position.z = 0.3414;
+
+    // scan_pose.pose.orientation.x = -0.64772;
+    // scan_pose.pose.orientation.y = 0.48432;
+    // scan_pose.pose.orientation.z = -0.011464;
+    // scan_pose.pose.orientation.w = 0.58802;
+    // scan_pose.pose.position.x = 0.021464;
+    // scan_pose.pose.position.y = -0.64255;
+    // scan_pose.pose.position.z = 0.42707;
+
+
+
+    std::vector<geometry_msgs::PoseStamped> bari_poses;
+    std::vector<geometry_msgs::PoseStamped> final_poses;
+
+
+    int N_bari_x = 2;
+    int N_bari_y = 4;
+    int N_bari_z = 1;
+    for (int xi = 0; xi< N_bari_x;xi++){
+      for (int yi = 0; yi< N_bari_y;yi++){
+        for (int zi = 0; zi< N_bari_z;zi++){
+
+
+          geometry_msgs::PoseStamped target_pose_final;
+          target_pose_final.header.frame_id = "base_link";
+          target_pose_final.pose.orientation.x = 0.93373;
+          target_pose_final.pose.orientation.y = -0.35765;
+          target_pose_final.pose.orientation.z = 0.0057657;
+          target_pose_final.pose.orientation.w = 0.014457;
+          target_pose_final.pose.position.x = 0.22 + 0.1*yi;
+          target_pose_final.pose.position.y = -0.80 + 0.05*xi;
+          target_pose_final.pose.position.z = 0.4;
+
+
+          final_poses.push_back(target_pose_final);
+
+
+          geometry_msgs::PoseStamped bari_pose;
+          bari_pose.header.frame_id = "base_link";
+
+          bari_pose.pose.orientation.x = 0.93373;
+          bari_pose.pose.orientation.y = -0.35765;
+          bari_pose.pose.orientation.z = 0.0057657;
+          bari_pose.pose.orientation.w = 0.014457;
+          bari_pose.pose.position.x = 0.5+ 0.04*xi;
+          bari_pose.pose.position.y = -0.05 -0.04+ 0.05*yi;
+          bari_pose.pose.position.z = 0.53731+0.02;
+          // bari_pose.orientation.x = 0.93373;
+          // bari_pose.orientation.y = -0.35765;
+          // bari_pose.orientation.z = 0.0057657;
+          // bari_pose.orientation.w = 0.014457;
+          // bari_pose.position.x = 0.5;
+          // bari_pose.position.y = -0.05 -0.04;
+          // bari_pose.position.z = 0.53731+0.02;
+      
+          bari_poses.push_back(bari_pose);
+
+        }
+      }
+    }
+
+    std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
+
+    //TODO CHANGE
+    std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
+    //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
+
+    if(fichier)
+    {
+      //L'ouverture s'est bien passée, on peut donc lire
+
+      std::string ligne; //Une variable pour stocker les lignes lues
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+
+
+      while(getline(fichier, ligne)) //Tant qu'on n'est pas à la fin, on lit
+      {
+          std::stringstream ss(ligne);
+
+          std::cout << ligne << std::endl;
+          std::string tx, ty, tz, rx, ry, rz;
+          std::getline(ss,tx,',');    
+          std::cout<<"\""<<tx<<"\""<<std::endl;
+          std::getline(ss,ty,','); 
+          std::cout<<", \""<<ty<<"\""<<std::endl;
+          std::getline(ss,tz,','); 
+          std::cout<<", \""<<tz<<"\""<<std::endl;
+          std::getline(ss,rx,',');    
+          std::cout<<"\""<<rx<<"\""<<std::endl;
+          std::getline(ss,ry,','); 
+          std::cout<<", \""<<ry<<"\""<<std::endl;
+          std::getline(ss,rz,','); 
+          std::cout<<", \""<<rz<<"\""<<std::endl;
+          Eigen::Isometry3d tf_tcp_in_bari;
+          tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
+          geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.1);
+          grasping_poses.push_back(tf_transformed);
+          tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+          grasping_poses_true.push_back(tf_transformed);
+          //Et on l'affiche dans la console 
+          //Ou alors on fait quelque chose avec cette ligne
+          //À vous de voir
+      }
+    }
+    else
+    {
+      std::cout << "ERREUR: Impossible d'ouvrir le fichier en lecture." << std::endl;
+    }
+
+
+
+
+
+    // Eigen::Isometry3d tf_tcp_in_bari;
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    std::cout<<grasping_poses.size()<<std::endl;
+    vec_grasping_poses.push_back(grasping_poses);
+    vec_grasping_poses.push_back(grasping_poses_true);
+
+
+    //tf_transformed.header.frame_id = "bari0";
+
+
+
+    std::vector<moveit_msgs::CollisionObject> collision_object_baris;
 
     //TODO CHANGE
     int ID_grasp = 13; //bari
@@ -4190,172 +4674,7 @@ int main(int argc, char** argv)
   // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
   visual_tools.trigger();
 
-  // Start the demo
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^
-  // Adding objects to the environment
-  // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  //
-  // First let's plan to another simple goal with no objects in the way.
 
-  geometry_msgs::PoseStamped scan_pose;
-  scan_pose.header.frame_id = "base_link";
-
-  scan_pose.pose.orientation.x = -0.29956;
-  scan_pose.pose.orientation.y = 0.65046;
-  scan_pose.pose.orientation.z = -0.25386;
-  scan_pose.pose.orientation.w = 0.65018;
-  scan_pose.pose.position.x = -0.089795;
-  scan_pose.pose.position.y = -0.71612;
-  scan_pose.pose.position.z = 0.3414;
-
-  // scan_pose.pose.orientation.x = -0.64772;
-  // scan_pose.pose.orientation.y = 0.48432;
-  // scan_pose.pose.orientation.z = -0.011464;
-  // scan_pose.pose.orientation.w = 0.58802;
-  // scan_pose.pose.position.x = 0.021464;
-  // scan_pose.pose.position.y = -0.64255;
-  // scan_pose.pose.position.z = 0.42707;
-
-
-
-  std::vector<geometry_msgs::PoseStamped> bari_poses;
-  std::vector<geometry_msgs::PoseStamped> final_poses;
-
-
-  int N_bari_x = 2;
-  int N_bari_y = 4;
-  int N_bari_z = 1;
-  for (int xi = 0; xi< N_bari_x;xi++){
-    for (int yi = 0; yi< N_bari_y;yi++){
-      for (int zi = 0; zi< N_bari_z;zi++){
-
-
-        geometry_msgs::PoseStamped target_pose_final;
-        target_pose_final.header.frame_id = "base_link";
-        target_pose_final.pose.orientation.x = 0.93373;
-        target_pose_final.pose.orientation.y = -0.35765;
-        target_pose_final.pose.orientation.z = 0.0057657;
-        target_pose_final.pose.orientation.w = 0.014457;
-        target_pose_final.pose.position.x = 0.22 + 0.1*yi ;
-        target_pose_final.pose.position.y = -0.80 + 0.05*xi;
-        target_pose_final.pose.position.z = 0.4;
-        // target_pose_final.orientation.x = -0.65663;
-        // target_pose_final.orientation.y = 0.25469;
-        // target_pose_final.orientation.z = 0.25726;
-        // target_pose_final.orientation.w = 0.66166;
-        // target_pose_final.position.x = 0.48;
-        // target_pose_final.position.y = -0.05;
-        // target_pose_final.position.z = 0.51;
-
-        final_poses.push_back(target_pose_final);
-
-
-        geometry_msgs::PoseStamped bari_pose;
-        bari_pose.header.frame_id = "base_link";
-
-        bari_pose.pose.orientation.x = 0.93373;
-        bari_pose.pose.orientation.y = -0.35765;
-        bari_pose.pose.orientation.z = 0.0057657;
-        bari_pose.pose.orientation.w = 0.014457;
-        bari_pose.pose.position.x = 0.5+ 0.04*xi;
-        bari_pose.pose.position.y = -0.05 -0.04+ 0.05*yi;
-        bari_pose.pose.position.z = 0.53731+0.02;
-        // bari_pose.orientation.x = 0.93373;
-        // bari_pose.orientation.y = -0.35765;
-        // bari_pose.orientation.z = 0.0057657;
-        // bari_pose.orientation.w = 0.014457;
-        // bari_pose.position.x = 0.5;
-        // bari_pose.position.y = -0.05 -0.04;
-        // bari_pose.position.z = 0.53731+0.02;
-    
-        bari_poses.push_back(bari_pose);
-
-      }
-    }
-  }
-
-  std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
-  std::vector<geometry_msgs::PoseStamped> grasping_poses;
-  std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
-
-  //TODO CHANGE
-  std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
-  //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
-
-  if(fichier)
-  {
-    //L'ouverture s'est bien passée, on peut donc lire
-
-    std::string ligne; //Une variable pour stocker les lignes lues
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-    getline(fichier, ligne);
-
-
-    while(getline(fichier, ligne)) //Tant qu'on n'est pas à la fin, on lit
-    {
-        std::stringstream ss(ligne);
-
-        std::cout << ligne << std::endl;
-        std::string tx, ty, tz, rx, ry, rz;
-        std::getline(ss,tx,',');    
-        std::cout<<"\""<<tx<<"\""<<std::endl;
-        std::getline(ss,ty,','); 
-        std::cout<<", \""<<ty<<"\""<<std::endl;
-        std::getline(ss,tz,','); 
-        std::cout<<", \""<<tz<<"\""<<std::endl;
-        std::getline(ss,rx,',');    
-        std::cout<<"\""<<rx<<"\""<<std::endl;
-        std::getline(ss,ry,','); 
-        std::cout<<", \""<<ry<<"\""<<std::endl;
-        std::getline(ss,rz,','); 
-        std::cout<<", \""<<rz<<"\""<<std::endl;
-        Eigen::Isometry3d tf_tcp_in_bari;
-        tf_tcp_in_bari = moveit_engine_test.create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
-        geometry_msgs::PoseStamped tf_transformed = moveit_engine_test.link6_in_bari_grasp(tf_tcp_in_bari, 0.1);
-        grasping_poses.push_back(tf_transformed);
-        tf_transformed = moveit_engine_test.link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
-        grasping_poses_true.push_back(tf_transformed);
-        //Et on l'affiche dans la console 
-        //Ou alors on fait quelque chose avec cette ligne
-        //À vous de voir
-    }
-  }
-  else
-  {
-    std::cout << "ERREUR: Impossible d'ouvrir le fichier en lecture." << std::endl;
-  }
-
-
-
-
-
-  // Eigen::Isometry3d tf_tcp_in_bari;
-  // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
-  // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
-  // grasping_poses.push_back(tf_transformed);
-  // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
-  // grasping_poses_true.push_back(tf_transformed);
-  // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
-  // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
-  // grasping_poses.push_back(tf_transformed);
-  // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
-  // grasping_poses_true.push_back(tf_transformed);
-  std::cout<<grasping_poses.size()<<std::endl;
-  vec_grasping_poses.push_back(grasping_poses);
-  vec_grasping_poses.push_back(grasping_poses_true);
-
-
-  //tf_transformed.header.frame_id = "bari0";
-
-
-
-  std::vector<moveit_msgs::CollisionObject> collision_object_baris;
 
   int M = 2;
   int N = 2; //(+1 bari detecté par scan)
@@ -4366,9 +4685,9 @@ int main(int argc, char** argv)
   //moveit_engine_test.full_scenario( collision_object_baris, scan_pose, final_poses, bari_poses, grasping_poses, M, N);
 
   //moveit_engine_test.full_scenario_grasp(collision_object_baris, scan_pose, final_poses, bari_poses, vec_grasping_poses, M, N);
-  //moveit_engine_test.full_scenario_grasp( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
+  //moveit_engine_test.full_scenario_grasp( M, N);
 
-  moveit_engine_test.full_scenario_grasp_robot(collision_object_baris, scan_pose, final_poses, bari_poses, vec_grasping_poses, M, N);
+  moveit_engine_test.full_scenario_grasp_robot(M, N);
 
 
 
