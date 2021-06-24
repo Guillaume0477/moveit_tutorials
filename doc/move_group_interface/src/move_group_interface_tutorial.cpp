@@ -90,17 +90,16 @@ public:
 
   // The :planning_interface:`MoveGroupInterface` class can be easily
   // setup using just the name of the planning group you would like to control and plan for.
-  moveit::planning_interface::MoveGroupInterface* move_group_interfaceptr;
+  moveit::planning_interface::MoveGroupInterface* move_group_interface_ptr;
 
   // We will use the :planning_interface:`PlanningSceneInterface`
   // class to add and remove collision objects in our "virtual world" scene
-  moveit::planning_interface::PlanningSceneInterface* planning_scene_interfaceptr;
-
+  moveit::planning_interface::PlanningSceneInterface* planning_scene_interface_ptr;
 
   // Raw pointers are frequently used to refer to the planning group for improved performance.
-  const moveit::core::JointModelGroup* joint_model_group;
+  const moveit::core::JointModelGroup* joint_model_group_ptr;
 
-
+  moveit_visual_tools::MoveItVisualTools* visual_tools_ptr;
 
 
   void createArrowMarker(visualization_msgs::Marker& marker, const geometry_msgs::Pose& pose, const Eigen::Vector3d& dir,
@@ -243,7 +242,7 @@ public:
 
   }
 
-  void load_bari_in_scene( moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+  void load_bari_in_scene(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
 
 
     // TODO CHANGE
@@ -273,7 +272,7 @@ public:
 
           // Now let's define a collision object ROS message for the robot to avoid.
           moveit_msgs::CollisionObject collision_object_bari;
-          collision_object_bari.header.frame_id = move_group_interface.getPlanningFrame();
+          collision_object_bari.header.frame_id = move_group_interface_ptr->getPlanningFrame();
 
           char id_bari[20];
           sprintf(id_bari,"bari%d",xi+N_bari_x*yi);
@@ -316,7 +315,7 @@ public:
     // Now, let's add the collision object into the world
     // (using a vector that could contain additional objects)
     ROS_INFO_NAMED("tutorial", "Add an object into the world");
-    planning_scene_interface.addCollisionObjects(collision_object_baris);
+    planning_scene_interface_ptr->addCollisionObjects(collision_object_baris);
 
 
   }
@@ -2527,7 +2526,7 @@ public:
     visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 6");
 
 
-    load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+    load_bari_in_scene(collision_object_baris, center);
     load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
@@ -2676,7 +2675,7 @@ public:
     const Eigen::Vector3d center(0.5,0.0,0.0);
     //center.x;
 
-    load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
+    load_bari_in_scene(collision_object_baris, center);
     load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
 
 
@@ -4128,317 +4127,6 @@ public:
   }
 
 
-  void full_scenario_without_attach(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses, int M, int N){
-
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    text_pose.translation().z() = 1.3;
-
-    std::chrono::seconds dura70(70);
-    
-    trajecto_initial_to_scan_and_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses);
-
-    setup_planner(move_group_interface);
-
-
-    for (int i = 0; i < M; i++){
-
-      // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-      // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-      //ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1));
-      //move_group_interface.attachObject(collision_object_baris[i*(N+1)].id, "link_tool");
-
-      //std::this_thread::sleep_for(dura70);
-
-
-      // std::map<std::string, moveit_msgs::CollisionObject> tab_objects = planning_scene_interface.getObjects();
-      // std::map<std::string, moveit_msgs::AttachedCollisionObject> tab_attached = planning_scene_interface.getAttachedObjects();
-
-
-      // std::cout << "###########CollisionObject#########" << std::endl;
-
-      // std::map<std::string, moveit_msgs::CollisionObject>::iterator it_object;
-      // int compteur = 0;
-      // for (it_object = tab_objects.begin(); it_object != tab_objects.end(); it_object++)
-      // //for (it_object = tab_objects.begin(); it_object != 20; it_object++)
-      // {
-      //   compteur++;
-      //   if (compteur >= 20){
-      //     break;
-      //   }
-      //   std::cout << it_object->first    // string (key)
-      //   << " : "
-      //   << it_object->second   // string's value 
-      //   << std::endl;
-      // }
-
-      // std::cout << "##########AttachedObject###########" << std::endl;
-
-      // std::map<std::string, moveit_msgs::AttachedCollisionObject>::iterator it_attached;
-      // int compteur2 = 0;
-      // for (it_attached = tab_attached.begin(); it_attached != tab_attached.end(); it_attached++)
-      // //for (it_attached = tab_attached.begin(); it_attached != 20; it_attached++)
-      // {
-      //   compteur2++;
-      //   if (compteur2 >= 20){
-      //     break;
-      //   }
-      //   std::cout << it_attached->first    // string (key)
-      //   << " : "
-      //   << it_attached->second   // string's value 
-      //   << std::endl;
-      // }
-
-
-      //visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-      //visual_tools.trigger();
-
-      move_group_interface.setStartStateToCurrentState();
-
-      // moveit::core::RobotStatePtr start_state;
-      // start_state = move_group_interface.getStartState();
-
-      // move_group_interface.setStartState(*start_state);
-      trajecto_bari_to_out_by_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[i*(N+1)]);
-
-
-      // The result may look something like this:
-      //
-      // .. image:: ./move_group_interface_tutorial_attached_object.gif
-      //    :alt: animation showing the arm moving differently once the object is attached
-      //
-      // Detaching and Removing Objects
-      // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      //
-      // Now, let's detach the cylinder from the robot's gripper.
-      //ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i*(N+1));
-      //move_group_interface.detachObject(collision_object_baris[i*(N+1)].id);
-
-      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-      // Show text in RViz of status
-      visual_tools.deleteAllMarkers();
-      visual_tools.publishText(text_pose, "Object detached from robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-      visual_tools.trigger();
-
-
-      /* Wait for MoveGroup to receive and process the attached collision object message */
-      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
-
-
-
-      for (int j = 0; j< N; j++){
-
-
-        // geometry_msgs::Pose bari_pose;
-        // bari_pose.orientation.x = 0.93373;
-        // bari_pose.orientation.y = -0.35765;
-        // bari_pose.orientation.z = 0.0057657;
-        // bari_pose.orientation.w = 0.014457;
-
-
-
-        // bari_pose.position.x = 0.5+ 0.04*xi;
-        // bari_pose.position.y = -0.05 -0.04+ 0.05*yi;
-        // bari_pose.position.z = 0.53731+0.02;
-
-        move_group_interface.setStartState(*move_group_interface.getCurrentState());
-
-
-
-
-        trajecto_out_to_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses[i*(N+1) + j + 1]);
-
-
-
-        // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-        // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-        //ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1) + j + 1);
-
-        //move_group_interface.attachObject(collision_object_baris[i*(N+1) + j + 1].id, "link_tool");
-
-        //visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-        //visual_tools.trigger();
-
-        //std::chrono::seconds dura10(10);
-
-
-
-
-
-
-
-        /* Wait for MoveGroup to receive and process the attached collision object message */
-        //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
-
-
-
-
-
-        // geometry_msgs::Pose target_pose_final;
-        // target_pose_final.orientation.x = 0.93373;
-        // target_pose_final.orientation.y = -0.35765;
-        // target_pose_final.orientation.z = 0.0057657;
-        // target_pose_final.orientation.w = 0.014457;
-        // target_pose_final.position.x = 0.45 + 0.08*xi;;
-        // target_pose_final.position.y = +0.35 + 0.1*yi;
-        // target_pose_final.position.z = 0.5;
-        // move_group_interface.setPoseTarget(target_pose_final);
-
-
-
-
-
-        //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-
-        // Replan, but now with the object in hand.
-        move_group_interface.setStartStateToCurrentState();
-
-
-        trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[i*(N+1) + j + 1]);
-
-
-        // The result may look something like this:
-        //
-        // .. image:: ./move_group_interface_tutorial_attached_object.gif
-        //    :alt: animation showing the arm moving differently once the object is attached
-        //
-        // Detaching and Removing Objects
-        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        //
-        // Now, let's detach the cylinder from the robot's gripper.
-        //ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", i*(N+1) + j + 1);
-        //move_group_interface.detachObject(collision_object_baris[i*(N+1) + j + 1].id);
-
-        //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-        // Show text in RViz of status
-        visual_tools.deleteAllMarkers();
-        visual_tools.publishText(text_pose, "Object detached from robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-        visual_tools.trigger();
-
-
-        /* Wait for MoveGroup to receive and process the attached collision object message */
-        //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
-
-
-
-      }
-
-
-
-      move_group_interface.setStartState(*move_group_interface.getCurrentState());
-
-
-
-
-      trajecto_out_to_bari(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses[i*(N+1) + N + 1]);
-
-      // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-      // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-      //ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", i*(N+1) + N + 1);
-
-      //move_group_interface.attachObject(collision_object_baris[i*(N+1) + N + 1].id, "link_tool");
-
-      //visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-      //visual_tools.trigger();
-
-      //std::chrono::seconds dura10(10);
-
-
-
-
-
-
-
-      /* Wait for MoveGroup to receive and process the attached collision object message */
-      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
-
-
-
-
-
-      // geometry_msgs::Pose target_pose_final;
-      // target_pose_final.orientation.x = 0.93373;
-      // target_pose_final.orientation.y = -0.35765;
-      // target_pose_final.orientation.z = 0.0057657;
-      // target_pose_final.orientation.w = 0.014457;
-      // target_pose_final.position.x = 0.45 + 0.08*xi;;
-      // target_pose_final.position.y = +0.35 + 0.1*yi;
-      // target_pose_final.position.z = 0.5;
-      // move_group_interface.setPoseTarget(target_pose_final);
-
-
-
-
-      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-    }
-
-
-
-    // Replan, but now with the object in hand.
-    move_group_interface.setStartStateToCurrentState();
-
-
-
-    trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[(M-1)*(N+1) + N + 1]);
-
-
-    // The result may look something like this:
-    //
-    // .. image:: ./move_group_interface_tutorial_attached_object.gif
-    //    :alt: animation showing the arm moving differently once the object is attached
-    //
-    // Detaching and Removing Objects
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //
-    // Now, let's detach the cylinder from the robot's gripper.
-    //ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", (M-1)*(N+1) + N + 1);
-    //move_group_interface.detachObject(collision_object_baris[(M-1)*(N+1) + N + 1].id);
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-    // Show text in RViz of status
-    //visual_tools.deleteAllMarkers();
-    //visual_tools.publishText(text_pose, "Object detached from robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-  // visual_tools.trigger();
-
-
-    /* Wait for MoveGroup to receive and process the attached collision object message */
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
-
-
-
-
-
-
-    // Now, let's remove the objects from the world.
-    ROS_INFO_NAMED("tutorial", "Remove the objects from the world");
-    std::vector<std::string> object_ids;
-
-    for (std::vector<moveit_msgs::CollisionObject>::iterator it = collision_object_baris.begin() ; it != collision_object_baris.end(); it++)
-    {
-      moveit_msgs::CollisionObject obj = *it;
-      object_ids.push_back(obj.id);
-    }
-
-
-    //object_ids.push_back(object_to_attach.id);
-    planning_scene_interface.removeCollisionObjects(object_ids);
-
-    // Show text in RViz of status
-    visual_tools.publishText(text_pose, "Objects removed", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-  }
-
-
   void scenario_test_out_attach(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses, int M, int N){
 
     //#####
@@ -4531,96 +4219,6 @@ public:
 
 
 
-  void scenario_test_scan_attach(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses, int M, int N){
-
-    //#####
-    //##### begin scenario #####
-    //#####
-
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    
-    trajecto_initial_to_scan_and_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses);
-
-
-    setup_planner_test(move_group_interface);
-    //setup_planner_test_constrain(move_group_interface);
-
-    // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-    // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-    ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", 0);
-
-    move_group_interface.attachObject(collision_object_baris[0].id, "link_tool");
-
-
-    std::chrono::seconds dura70(2);
-    for (int i = 0; i < 10; i++){
-
-
-      //moveit_msgs::AttachedCollisionObject aco;
-      //aco.object.id = collision_object_baris[0].id;
-      //aco.link_name = "link_tool";
-      //planning_scene_interface.applyAttachedCollisionObject(aco);
-
-
-      move_group_interface.setStartStateToCurrentState();
-
-      trajecto_bari_to_scan(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group);
-
-      move_group_interface.setStartStateToCurrentState();
-
-      trajecto_scan_to_bari(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses[0]);
-
-    }
-
-
-
-    // The result may look something like this:
-    //
-    // .. image:: ./move_group_interface_tutorial_attached_object.gif
-    //    :alt: animation showing the arm moving differently once the object is attached
-    //
-    // Detaching and Removing Objects
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //
-    // Now, let's detach the cylinder from the robot's gripper.
-    ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", 0);
-    move_group_interface.detachObject(collision_object_baris[0].id);
-
-    // Show text in RViz of status
-    visual_tools.deleteAllMarkers();
-    visual_tools.publishText(text_pose, "Object detached from robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-    /* Wait for MoveGroup to receive and process the attached collision object message */
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
-
-
-
-
-
-
-    // Now, let's remove the objects from the world.
-    ROS_INFO_NAMED("tutorial", "Remove the objects from the world");
-    std::vector<std::string> object_ids;
-
-    for (std::vector<moveit_msgs::CollisionObject>::iterator it = collision_object_baris.begin() ; it != collision_object_baris.end(); it++)
-    {
-      moveit_msgs::CollisionObject obj = *it;
-      object_ids.push_back(obj.id);
-    }
-
-
-    //object_ids.push_back(object_to_attach.id);
-    planning_scene_interface.removeCollisionObjects(object_ids);
-
-    // Show text in RViz of status
-    visual_tools.publishText(text_pose, "Objects removed", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-  }
-
   geometry_msgs::Quaternion relative_quat_rotation(geometry_msgs::Quaternion q1 , geometry_msgs::Quaternion q2){
 
     geometry_msgs::Quaternion result;
@@ -4640,377 +4238,6 @@ public:
   }
 
 
-
-
-  void pick(moveit::planning_interface::MoveGroupInterface& move_group, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface, moveit_visual_tools::MoveItVisualTools &visual_tools)
-  {
-    // BEGIN_SUB_TUTORIAL pick1
-    // Create a vector of grasps to be attempted, currently only creating single grasp.
-    // This is essentially useful when using a grasp generator to generate and test multiple grasps.
-    std::vector<moveit_msgs::Grasp> grasps;
-    grasps.resize(1);
-
-    std::vector<std::string> object_id;
-    object_id.push_back(collision_object_baris[0].id);
-
-
-
-    std::map<std::string, geometry_msgs::Pose> map_pose = planning_scene_interface.getObjectPoses(object_id);
-    // Setting grasp pose
-    // ++++++++++++++++++++++
-    // This is the pose of panda_link8. |br|
-    // Make sure that when you set the grasp_pose, you are setting it to be the pose of the last link in
-    // your manipulator which in this case would be `"panda_link8"` You will have to compensate for the
-    // transform from `"panda_link8"` to the palm of the end effector.
-    grasps[0].grasp_pose.header.frame_id = "base_link";
-    // tf2::Quaternion orientation;
-    //orientation.setRPY(-tau / 4, -tau / 8, -tau / 4);
-    grasps[0].grasp_pose.pose = map_pose[collision_object_baris[0].id];
-
-    std::cout<< grasps[0].grasp_pose.pose <<std::endl;
-    visual_tools.publishAxisLabeled(grasps[0].grasp_pose.pose, "bari_pose");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-    geometry_msgs::PoseStamped base_pose;
-    base_pose.pose.orientation.w=1.0;
-
-    geometry_msgs::PoseStamped tf_pose;
-    tf_pose.pose = grasps[0].grasp_pose.pose;
-    tf_pose.header.frame_id = grasps[0].grasp_pose.header.frame_id;
-
-    tf2_ros::Buffer tf_buffer;
-    tf2_ros::TransformListener tf2_listener(tf_buffer);
-
-
-    geometry_msgs::PointStamped pointstamp ;
-    pointstamp.header.frame_id = "link_finger1";
-    pointstamp.header.stamp = ros::Time(0);
-    pointstamp.point.x = 1.0;
-    pointstamp.point.y = 0.0;
-    pointstamp.point.z = 0.0;
-
-    // tf2_listener.transformPoint("base_link", pointstamp );
-
-    // visual_tools.publishAxisLabeled(pointstamp, "tcp_in_link");
-    // visual_tools.trigger(); // to apply changes
-
-
-    // visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-
-    geometry_msgs::TransformStamped tcp_in_link_finger1; // My frames are named "base_link" and "leap_motion"
-    tcp_in_link_finger1.header.frame_id = "link_finger1";
-    tcp_in_link_finger1.child_frame_id = "link_TCP";
-    tcp_in_link_finger1.header.stamp = ros::Time::now();
-    tcp_in_link_finger1.transform.translation.x = 0.0;
-    tcp_in_link_finger1.transform.translation.y = 0.0;
-    tcp_in_link_finger1.transform.translation.z = 1.0;
-    tf2::Quaternion q;
-    q.setRPY(0, 0, 0);
-    tcp_in_link_finger1.transform.rotation.x = q.x();
-    tcp_in_link_finger1.transform.rotation.y = q.y();
-    tcp_in_link_finger1.transform.rotation.z = q.z();
-    tcp_in_link_finger1.transform.rotation.w = q.w();
-
-    geometry_msgs::PoseStamped pose_finger = move_group.getCurrentPose("link_finger1") ;
-
-
-
-
-
-    // tf::Transform transform;
-
-    // transform.setOrigin( tf::Vector3(0.0, 0.5, 0.0) );
-    // transform.setRotation( tf::Quaternion(0, 0, 0, 1) );
-    // tcp_in_link_finger1 = geometry_msgs::TransformStamped(transform, ros::Time::now(), "link_finger1", "link_finger1");
-
-    tf2::doTransform(pose_finger.pose, grasps[0].grasp_pose.pose, tcp_in_link_finger1); // robot_pose is the PoseStamped I want to transform
-
-
-    std::cout<< grasps[0].grasp_pose.pose <<std::endl;
-
-    visual_tools.publishAxisLabeled(grasps[0].grasp_pose.pose, "tcp_in_link");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-    geometry_msgs::PoseStamped pose_link6 = move_group.getCurrentPose("link_6") ;
-
-
-    geometry_msgs::PoseStamped pose_link_tool = move_group.getCurrentPose("link_tool") ;
-
-
-    geometry_msgs::TransformStamped base_link_to_leap_motion; // My frames are named "base_link" and "leap_motion"
-
-    base_link_to_leap_motion = tf_buffer.lookupTransform( "link_6", "link_finger1", ros::Time(0), ros::Duration(50.0) );
-
-    std::cout<< "pose_link6 " << pose_link6 <<std::endl;
-    std::cout<< "pose_finger " << pose_finger <<std::endl;
-
-    geometry_msgs::PoseStamped manual_tf_to_apply;
-
-
-    manual_tf_to_apply.pose.position.x = pose_finger.pose.position.x - pose_link6.pose.position.x;
-    manual_tf_to_apply.pose.position.y = pose_finger.pose.position.y - pose_link6.pose.position.y;
-    manual_tf_to_apply.pose.position.z = pose_finger.pose.position.z - pose_link6.pose.position.z;
-
-
-    manual_tf_to_apply.pose.orientation = relative_quat_rotation(pose_link6.pose.orientation ,pose_finger.pose.orientation );
-
-    std::cout<< "relative tf pose " << manual_tf_to_apply <<std::endl;
-
-
-    geometry_msgs::PoseStamped manual_goal;
-
-    manual_goal = base_pose;
-
-    manual_goal.pose.position.x = manual_goal.pose.position.x + manual_tf_to_apply.pose.position.x;
-    manual_goal.pose.position.y = manual_goal.pose.position.y + manual_tf_to_apply.pose.position.y;
-    manual_goal.pose.position.z = manual_goal.pose.position.z + manual_tf_to_apply.pose.position.z;
-
-    manual_goal.pose.orientation = apply_rotation(manual_goal.pose.orientation, manual_tf_to_apply.pose.orientation);
-
-    std::cout<< "manual_goal " << manual_goal <<std::endl;
-
-
-    visual_tools.publishAxisLabeled(manual_goal.pose, "TEST RESULT QUAT");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-    std::cout<< "manual_goal " << manual_goal <<std::endl;
-
-
-    std::cout<< "tf_link_tool_link_6 ? : " << base_link_to_leap_motion <<std::endl;
-
-    std::cout<< "grasps[0].grasp_pose.pose before  ? : " << grasps[0].grasp_pose.pose <<std::endl;
-    std::cout<< "base_pose  ? : " << base_pose <<std::endl;
-
-    grasps[0].grasp_pose.pose = base_pose.pose;
-
-    tf2::doTransform(base_pose, grasps[0].grasp_pose, base_link_to_leap_motion); // robot_pose is the PoseStamped I want to transform
-
-    std::cout<< "link_finger1_with_tf_final ? : " << grasps[0].grasp_pose.pose <<std::endl;
-
-    //::cout<< "link_6 ? : " << pose_link6.pose <<std::endl;
-
-
-    std::cout<< grasps[0].grasp_pose.pose <<std::endl;
-
-    visual_tools.publishAxisLabeled(pose_link6.pose, "link6");
-    visual_tools.trigger(); // to apply changes
-
-    visual_tools.publishAxisLabeled(grasps[0].grasp_pose.pose, "link_tool_in_link6");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-    geometry_msgs::TransformStamped base_link_to_leap_motion2; // My frames are named "base_link" and "leap_motion"
-
-    base_link_to_leap_motion2 = tf_buffer.lookupTransform( "link_6", "link_tool", ros::Time(0), ros::Duration(1.0) );
-
-
-    tf2::doTransform(map_pose[collision_object_baris[0].id], grasps[0].grasp_pose.pose, base_link_to_leap_motion2); // robot_pose is the PoseStamped I want to transform
-
-
-    std::cout<< grasps[0].grasp_pose.pose <<std::endl;
-
-    visual_tools.publishAxisLabeled(grasps[0].grasp_pose.pose, "bari_pose_tf2");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-    tf2::doTransform(map_pose[collision_object_baris[0].id], grasps[0].grasp_pose.pose, base_link_to_leap_motion2); // robot_pose is the PoseStamped I want to transform
-
-
-    std::cout<< grasps[0].grasp_pose.pose <<std::endl;
-
-    visual_tools.publishAxisLabeled(grasps[0].grasp_pose.pose, "bari_pose_tf22");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-    geometry_msgs::TransformStamped base_link_to_leap_motion3; // My frames are named "base_link" and "leap_motion"
-
-    base_link_to_leap_motion3 = tf_buffer.lookupTransform( "link_6", collision_object_baris[0].id, ros::Time(0), ros::Duration(1.0) );
-
-
-    tf2::doTransform(map_pose[collision_object_baris[0].id], grasps[0].grasp_pose.pose, base_link_to_leap_motion3); // robot_pose is the PoseStamped I want to transform
-
-
-    std::cout<< grasps[0].grasp_pose.pose <<std::endl;
-
-    visual_tools.publishAxisLabeled(grasps[0].grasp_pose.pose, "bari_pose_tf3");
-    visual_tools.trigger(); // to apply changes
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-
-    // Show text in RViz of status
-
-
-    // grasps[0].grasp_pose.pose.position.x = 0.415;
-    // grasps[0].grasp_pose.pose.position.y = 0;
-    // grasps[0].grasp_pose.pose.position.z = 0.5;
-
-
-    // grasps[0].grasp_pose.pose.orientation.x = 0.93373;
-    // grasps[0].grasp_pose.pose.orientation.y = -0.35765;
-    // grasps[0].grasp_pose.pose.orientation.z = 0.0057657;
-    // grasps[0].grasp_pose.pose.orientation.w = 0.014457;
-    // grasps[0].grasp_pose.pose.position.x = 0.5+ 0.04;
-    // grasps[0].grasp_pose.pose.position.y = -0.05 -0.04+ 0.05;
-    // grasps[0].grasp_pose.pose.position.z = 0.53731+0.02;
-
-
-    // Setting pre-grasp approach
-    // ++++++++++++++++++++++++++
-    /* Defined with respect to frame_id */
-    grasps[0].pre_grasp_approach.direction.header.frame_id = "link_tool";
-    /* Direction is set as positive x axis */
-    grasps[0].pre_grasp_approach.direction.vector.x = 1.0;
-    grasps[0].pre_grasp_approach.min_distance = 0.095;
-    grasps[0].pre_grasp_approach.desired_distance = 0.115;
-
-    // Setting post-grasp retreat
-    // ++++++++++++++++++++++++++
-    /* Defined with respect to frame_id */
-    // grasps[0].post_grasp_retreat.direction.header.frame_id = "panda_link0";
-    // /* Direction is set as positive z axis */
-    // grasps[0].post_grasp_retreat.direction.vector.z = 1.0;
-    // grasps[0].post_grasp_retreat.min_distance = 0.1;
-    // grasps[0].post_grasp_retreat.desired_distance = 0.25;
-
-    // Setting posture of eef before grasp
-    // +++++++++++++++++++++++++++++++++++
-    //openGripper(grasps[0].pre_grasp_posture);
-    // END_SUB_TUTORIAL
-
-    // BEGIN_SUB_TUTORIAL pick2
-    // Setting posture of eef during grasp
-    // +++++++++++++++++++++++++++++++++++
-    //closedGripper(grasps[0].grasp_posture);
-    // END_SUB_TUTORIAL
-
-    // BEGIN_SUB_TUTORIAL pick3
-    // Set support surface as table1.
-    //move_group.setSupportSurfaceName("table1");
-    // Call pick to pick up the object using the grasps given
-    move_group.pick("bari0", grasps);
-    // END_SUB_TUTORIAL
-  }
-
-
-
-
-
-  void full_scenario_pick_place(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses, int M, int N){
-
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    text_pose.translation().z() = 1.3;
-
-    std::chrono::seconds dura70(70);
-    
-    //trajecto_initial_to_scan_and_bari( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses);
-    trajecto_initial_to_scan_and_bari2( move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, bari_poses);
-
-    setup_planner(move_group_interface);
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-    pick(move_group_interface, collision_object_baris, planning_scene_interface, visual_tools);
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-    // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-    // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-    //ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", 0);
-    //move_group_interface.attachObject(collision_object_baris[0].id, "link_tool");
-
-    visual_tools.publishText(text_pose, "Object attached to robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-    // Replan, but now with the object in hand.
-    move_group_interface.setStartStateToCurrentState();
-
-
-    trajecto_bari_to_out(move_group_interface, collision_object_baris, planning_scene_interface , scan_pose, visual_tools, joint_model_group, final_poses[(M-1)*(N+1) + N + 1]);
-
-
-    // The result may look something like this:
-    //
-    // .. image:: ./move_group_interface_tutorial_attached_object.gif
-    //    :alt: animation showing the arm moving differently once the object is attached
-    //
-    // Detaching and Removing Objects
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //
-    // Now, let's detach the cylinder from the robot's gripper.
-    ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", 0);
-    move_group_interface.detachObject(collision_object_baris[0].id);
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-    // Show text in RViz of status
-    visual_tools.deleteAllMarkers();
-    visual_tools.publishText(text_pose, "Object detached from robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-    /* Wait for MoveGroup to receive and process the attached collision object message */
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
-
-
-
-
-
-
-    // Now, let's remove the objects from the world.
-    ROS_INFO_NAMED("tutorial", "Remove the objects from the world");
-    std::vector<std::string> object_ids;
-
-    for (std::vector<moveit_msgs::CollisionObject>::iterator it = collision_object_baris.begin() ; it != collision_object_baris.end(); it++)
-    {
-      moveit_msgs::CollisionObject obj = *it;
-      object_ids.push_back(obj.id);
-    }
-
-
-    //object_ids.push_back(object_to_attach.id);
-    planning_scene_interface.removeCollisionObjects(object_ids);
-
-    // Show text in RViz of status
-    visual_tools.publishText(text_pose, "Objects removed", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-  }
 
 
 
@@ -5093,16 +4320,16 @@ Moveit_Engine::Moveit_Engine(int argc, char** argv, moveit::planning_interface::
   // // The :planning_interface:`MoveGroupInterface` class can be easily
   // // setup using just the name of the planning group you would like to control and plan for.
   //moveit::planning_interface::MoveGroupInterface move_group_interface = moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
-  move_group_interfaceptr = &move_group_interface;
+  move_group_interface_ptr = &move_group_interface;
 
   // We will use the :planning_interface:`PlanningSceneInterface`
   // class to add and remove collision objects in our "virtual world" scene
   //moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-  planning_scene_interfaceptr = &planning_scene_interface;
+  planning_scene_interface_ptr = &planning_scene_interface;
 
 
   //Raw pointers are frequently used to refer to the planning group for improved performance.
-  joint_model_group = move_group_interfaceptr->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+  joint_model_group_ptr = move_group_interface_ptr->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
 
   std::cout << "HI THERE 1" << std::endl;
@@ -5117,9 +4344,6 @@ const std::string Moveit_Engine::PLANNING_GROUP = "arm_group";
 
 int main(int argc, char** argv)
 {
-
-
-  std::cout << "HI THERE 00" << std::endl;
   ros::init(argc, argv, "move_group_interface_tutorial");
   ros::NodeHandle node_handle;
 
@@ -5130,22 +4354,17 @@ int main(int argc, char** argv)
   spinner.start();
   static const std::string PLANNING_GROUP = "arm_group";
 
-
-    // // The :planning_interface:`MoveGroupInterface` class can be easily
+  // // The :planning_interface:`MoveGroupInterface` class can be easily
   // // setup using just the name of the planning group you would like to control and plan for.
   moveit::planning_interface::MoveGroupInterface move_group_interface = moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
-  //move_group_interfaceptr = &move_group_interface;
 
   // We will use the :planning_interface:`PlanningSceneInterface`
   // class to add and remove collision objects in our "virtual world" scene
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-  //planning_scene_interfaceptr = &planning_scene_interface;
 
-
-  //Raw pointers are frequently used to refer to the planning group for improved performance.
-  const moveit::core::JointModelGroup* joint_model_group = move_group_interface.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
-
-
+  // The package MoveItVisualTools provides many capabilities for visualizing objects, robots,
+  // and trajectories in RViz as well as debugging tools such as step-by-step introspection of a script.
+  moveit_visual_tools::MoveItVisualTools visual_tools("base_link");
 
   //std::thread first(run_ros, argc, argv);
   //std::cout << "thread launched" << std::endl;
@@ -5157,11 +4376,14 @@ int main(int argc, char** argv)
   //Moveit_Engine moveit_engine_test = Moveit_Engine(argc,argv,move_group_interface,planning_scene_interface,joint_model_group);
   Moveit_Engine moveit_engine_test = Moveit_Engine(argc,argv);
 
-
+  moveit_engine_test.move_group_interface_ptr = &move_group_interface;
+  moveit_engine_test.planning_scene_interface_ptr = &planning_scene_interface;
+  moveit_engine_test.joint_model_group_ptr = move_group_interface.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+  moveit_engine_test.visual_tools_ptr = &visual_tools;
 
   // std::cout << "HI THERE 5098" << std::endl;
 
-  // std::cout << "HI THERE 111" << moveit_engine_test.move_group_interfaceptr << std::endl;
+  // std::cout << "HI THERE 111" << moveit_engine_test.move_group_int;erfaceptr << std::endl;
 
   // moveit::core::RobotStatePtr state = move_group_interface.getCurrentState();
 
@@ -5197,10 +4419,7 @@ int main(int argc, char** argv)
   // Visualization
   // ^^^^^^^^^^^^^
   //
-  // The package MoveItVisualTools provides many capabilities for visualizing objects, robots,
-  // and trajectories in RViz as well as debugging tools such as step-by-step introspection of a script.
-  namespace rvt = rviz_visual_tools;
-  moveit_visual_tools::MoveItVisualTools visual_tools("base_link");
+
   visual_tools.deleteAllMarkers();
 
 
@@ -5212,7 +4431,7 @@ int main(int argc, char** argv)
   // RViz provides many types of markers, in this demo we will use text, cylinders, and spheres
   Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
   text_pose.translation().z() = 1.0;
-  visual_tools.publishText(text_pose, "Demo MoveIt", rvt::WHITE, rvt::XLARGE);
+  visual_tools.publishText(text_pose, "Demo MoveIt", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
 
   // Batch publishing is used to reduce the number of messages being sent to RViz for large visualizations
   visual_tools.trigger();
@@ -5387,23 +4606,13 @@ int main(int argc, char** argv)
   int M = 2;
   int N = 2; //(+1 bari detecté par scan)
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 0");
-  *moveit_engine_test.move_group_interfaceptr;
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 1");
-  *moveit_engine_test.planning_scene_interfaceptr;
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 0");
-  moveit_engine_test.joint_model_group;
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 0");
-
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 0");
-
 
   //full_scenario_without_attach( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
 
-  //full_scenario( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, grasping_poses, M, N);
+  //moveit_engine_test.full_scenario( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, moveit_engine_test.joint_model_group_ptr, final_poses, bari_poses, grasping_poses, M, N);
 
-  //moveit_engine_test.full_scenario_grasp( *moveit_engine_test.move_group_interfaceptr, collision_object_baris, *moveit_engine_test.planning_scene_interfaceptr, scan_pose, visual_tools, moveit_engine_test.joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
-  moveit_engine_test.full_scenario_grasp( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
+  moveit_engine_test.full_scenario_grasp( *moveit_engine_test.move_group_interface_ptr, collision_object_baris, *moveit_engine_test.planning_scene_interface_ptr, scan_pose, *moveit_engine_test.visual_tools_ptr, moveit_engine_test.joint_model_group_ptr, final_poses, bari_poses, vec_grasping_poses, M, N);
+  //moveit_engine_test.full_scenario_grasp( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
 
   //moveit_engine_test.full_scenario_grasp_robot( *moveit_engine_test.move_group_interfaceptr, collision_object_baris, moveit_engine_test.planning_scene_interface, scan_pose, visual_tools, moveit_engine_test.joint_model_group, final_poses, bari_poses, vec_grasping_poses, M, N);
 
