@@ -198,6 +198,23 @@ public:
     }
   }
 
+  void fill_vector_cin_angle(std::vector<double>& boxInsideSizeM, std::string info){
+
+    std::string line = "";
+    double number;
+    while (line == ""){
+      std::cout << info << std::endl;
+      std::cout << "Enter numbers separated by spaces: ";
+      std::getline(std::cin, line);
+      std::cout << line << std::endl;
+      std::istringstream stream(line);
+      while (stream >> number){
+        std::cout<<"nombre"<<number<<std::endl;
+        boxInsideSizeM.push_back(number*M_PI/180.0);
+      }
+    }
+  }
+
 
   geometry_msgs::PoseStamped get_pose(std::string info){
     std::vector<double> vector_quentin;// = {0.269572 0.184798 0.177178};
@@ -224,7 +241,7 @@ public:
     tf2::fromMsg(base_link_moveit_to_halcon.pose, tf_base_link_moveit_to_halcon); //pose in bary frame
 
     Eigen::Isometry3d tf_pose;
-    tf2::fromMsg(pose.pose, tf_pose); //pose in bary frame
+    tf2::fromMsg(pose.pose, tf_pose);
 
     pose.pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_pose); //world to bary * pose in bary = pose in world
 
@@ -232,7 +249,7 @@ public:
 
   }
 
-  void load_bari_in_scene(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+  void load_bari_in_scene(std::vector<moveit_msgs::CollisionObject> &collision_object_baris){
 
 
     // TODO CHANGE
@@ -273,7 +290,7 @@ public:
           // Define a pose for the box (specified relative to frame_id)
           geometry_msgs::Pose pose;
 
-          //tf2::Quaternion q_rot;
+          tf2::Quaternion q_rot;
 
           // TODO CHANGE
           //q_rot.setRPY(3.14,0.00,0.00); //rk
@@ -389,67 +406,7 @@ public:
   }
 
 
-  void load_bari_in_scene2(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
-
-    //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
-    std::string modelpath = "package://geometric_shapes/test/resources/barillet_convex.obj";
-    ROS_INFO("mesh loades : %s ",modelpath.c_str());
-
-    static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
-    shapes::Mesh* cao_bary = shapes::createMeshFromResource(modelpath,scale);
-
-    ROS_INFO("mesh loades : %i triangles : %s ",cao_bary->triangle_count,modelpath.c_str());
-
-
-    shape_msgs::Mesh mesh_bary;
-    shapes::ShapeMsg mesh_bary_msg;
-
-    shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
-    mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
-
-    int N_bari_x = 1;
-    int N_bari_y = 1;
-    int N_bari_z = 1;
-    for (int xi = 0; xi< N_bari_x;xi++){
-      for (int yi = 0; yi< N_bari_y;yi++){
-        for (int zi = 0; zi< N_bari_z;zi++){
-
-          // Now let's define a collision object ROS message for the robot to avoid.
-          moveit_msgs::CollisionObject collision_object_bari;
-          collision_object_bari.header.frame_id = move_group_interface_ptr->getPlanningFrame();
-
-          char id_bari[20];
-          sprintf(id_bari,"bari%d",xi+N_bari_x*yi);
-
-          // The id of the object is used to identify it.
-          collision_object_bari.id = id_bari;
-
-          // Define a pose for the box (specified relative to frame_id)
-          geometry_msgs::Pose pose;
-          pose.orientation.w = 1.0;
-          //double res_x = center.x -0.5 + 0.1*xi;
-          pose.position.x = 0.5+ 0.04*xi;
-          pose.position.y = -0.05+ 0.05*yi;
-          pose.position.z = 0.15;
-          
-          collision_object_bari.meshes.push_back(mesh_bary);
-          collision_object_bari.mesh_poses.push_back(pose);
-          collision_object_bari.operation = collision_object_bari.ADD;
-
-          collision_object_baris.push_back(collision_object_bari);
-        }
-      }
-    }
-    // Now, let's add the collision object into the world
-    // (using a vector that could contain additional objects)
-    ROS_INFO_NAMED("tutorial", "Add an object into the world");
-    planning_scene_interface_ptr->addCollisionObjects(collision_object_baris);
-
-
-  }
-
-
-  void load_carton_in_scene(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, const Eigen::Vector3d center){
+  void load_carton_in_scene(std::vector<moveit_msgs::CollisionObject> &collision_object_baris){
 
     //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
     std::string modelpath = "package://geometric_shapes/test/resources/Contenant_barillet.stl";
@@ -947,9 +904,10 @@ public:
 
     //move_group_interface.setPoseReferenceFrame("bary0");
 
+
     move_group_interface_ptr->setPoseTarget(target_pose);
 
-
+    //move_group_interface_ptr->setJointValueTarget(vec_joint);
 
     // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
     // void getJointValueTarget(std::vector<double>& group_variable_values) const;
@@ -1025,123 +983,6 @@ public:
     }
     return joint_group_positions;
   }
-
-  void setup_planner_constrain(){
-
-      // - AnytimePathShortening
-      // - SBL
-      // - EST
-      // - LBKPIECE
-      // - BKPIECE
-      // - KPIECE
-      // - RRT
-      // - RRTConnect
-      // - RRTstar
-      // - TRRT
-      // - PRM
-      // - PRMstar
-      // - FMT
-      // - BFMT
-      // - PDST
-      // - STRIDE
-      // - BiTRRT
-      // - LBTRRT
-      // - BiEST
-      // - ProjEST
-      // - LazyPRM
-      // - LazyPRMstar
-      // - SPARS
-      // - SPARStwo
-      // - PersistentLazyPRMstar
-      // - PersistentLazyPRM
-      // - SemiPersistentLazyPRMstar
-      // - SemiPersistentLazyPRM
-
-
-
-    std::string planner_id = "SemiPersistentPRMstar";
-    move_group_interface_ptr->setPlannerId(planner_id);
-    std::map<std::string, std::string> parametre = move_group_interface_ptr->getPlannerParams(planner_id,"arm_group");
-
-    std::map<std::string, std::string>::iterator it;
-    for (it = parametre.begin(); it != parametre.end(); it++)
-    {
-      std::cout << it->first    // string (key)
-      << " : "
-      << it->second   // string's value 
-      << std::endl;
-    }
-    std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
-    //parametre["type"] = "geometric::LazyPRM";
-    //std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
-
-    //move_group_interface.setPlannerParams(planner_id, "arm_group", parametre);
-
-
-    move_group_interface_ptr->setPlanningTime(600);
-    /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
-        Allowed values are in (0,1]. The maximum joint velocity specified
-        in the robot model is multiplied by the factor. If the value is 0, it is set to
-        the default value, which is defined in joint_limits.yaml of the moveit_config.
-        If the value is greater than 1, it is set to 1.0. */
-    move_group_interface_ptr->setMaxVelocityScalingFactor(1.0);
-
-    /** \brief Set a scaling factor for optionally reducing the maximum joint acceleration.
-        Allowed values are in (0,1]. The maximum joint acceleration specified
-        in the robot model is multiplied by the factor. If the value is 0, it is set to
-        the default value, which is defined in joint_limits.yaml of the moveit_config.
-        If the value is greater than 1, it is set to 1.0. */
-    move_group_interface_ptr->setMaxAccelerationScalingFactor(1.0);
-
-
-
-
-
-
-    //std::cout<<planner_test*<<std::endl;
-
-
-    moveit_msgs::PositionConstraint pcm;
-    pcm.link_name = "link_tool";
-    pcm.header.frame_id = "base_link";
-    
-    shape_msgs::SolidPrimitive work_box;
-    work_box.type = work_box.BOX;
-    work_box.dimensions.resize(3);
-    work_box.dimensions[work_box.BOX_X] = 0.60; 
-    work_box.dimensions[work_box.BOX_Y] = 1.0; 
-    work_box.dimensions[work_box.BOX_Z] = 0.9; 
-
-    geometry_msgs::Pose work_box_pose;
-    work_box_pose.orientation.w = 1.0;
-    work_box_pose.position.x = 0.5;
-    work_box_pose.position.y = 0.155;
-    work_box_pose.position.z = 0.45;
-
-    pcm.constraint_region.primitives.push_back(work_box);
-    pcm.constraint_region.primitive_poses.push_back(work_box_pose);
-    pcm.weight = 1.0;
-
-    moveit_msgs::OrientationConstraint ocm;
-    ocm.link_name = "link_6";
-    ocm.header.frame_id = "base_link";
-    ocm.orientation.x = 0.93373;
-    ocm.orientation.y = -0.35765;
-    ocm.orientation.z = 0.0057657;
-    ocm.orientation.w = 0.014457;
-    ocm.absolute_x_axis_tolerance = 2.0; //90 degre abs
-    ocm.absolute_y_axis_tolerance = 2.0;
-    ocm.absolute_z_axis_tolerance = 10.0;
-    ocm.weight = 1.0;
-
-    moveit_msgs::Constraints test_constraints;
-    test_constraints.orientation_constraints.push_back(ocm);
-    test_constraints.position_constraints.push_back(pcm);
-    move_group_interface_ptr->setPathConstraints(test_constraints);
-
-
-  }
-
 
 
   void setup_planner(){
@@ -1258,13 +1099,13 @@ public:
     jc1.joint_name = "joint_1";  
     jc1.position = 0.0;
     jc1.tolerance_above = 0.0; //80 degrés
-    jc1.tolerance_below = 2.8;
+    jc1.tolerance_below = 3.0;
     jc1.weight = 1.0; 
 
     moveit_msgs::JointConstraint jc2;
     jc2.joint_name = "joint_2";  
     jc2.position = 0.0;
-    jc2.tolerance_above = 1.04; //60
+    jc2.tolerance_above = 1.57; //90
     jc2.tolerance_below = 0.7; //40
     jc2.weight = 1.0; 
 
@@ -1272,7 +1113,7 @@ public:
     jc3.joint_name = "joint_3";
     jc3.position = 0.0;
     jc3.tolerance_above = 2.53; //145
-    jc3.tolerance_below = 0.0; //+40
+    jc3.tolerance_below = 0.7; //+40
     jc3.weight = 1.0;
 
     moveit_msgs::JointConstraint jc4;
@@ -1287,7 +1128,7 @@ public:
     jc5.joint_name = "joint_5";  
     jc5.position = 0.0;
     jc5.tolerance_above = 2.39; //137
-    jc5.tolerance_below = 0; //115
+    jc5.tolerance_below = 2; //115
     jc5.weight = 1.0; 
 
     moveit_msgs::JointConstraint jc6;
@@ -1308,171 +1149,6 @@ public:
     //test_constraints.joint_constraints.push_back(jc6);
     move_group_interface_ptr->setPathConstraints(test_constraints);
 
-
-  }
-
-
-  void setup_planner_test(){
-
-      // - AnytimePathShortening
-      // - SBL
-      // - EST
-      // - LBKPIECE
-      // - BKPIECE
-      // - KPIECE
-      // - RRT
-      // - RRTConnect
-      // - RRTstar
-      // - TRRT
-      // - PRM
-      // - PRMstar
-      // - FMT
-      // - BFMT
-      // - PDST
-      // - STRIDE
-      // - BiTRRT
-      // - LBTRRT
-      // - BiEST
-      // - ProjEST
-      // - LazyPRM
-      // - LazyPRMstar
-      // - SPARS
-      // - SPARStwo
-      // - PersistentLazyPRMstar
-      // - PersistentLazyPRM
-      // - SemiPersistentLazyPRMstar
-      // - SemiPersistentLazyPRM
-
-
-
-    std::string planner_id = "SemiPersistentLazyPRMstar";
-    move_group_interface_ptr->setPlannerId(planner_id);
-    std::map<std::string, std::string> parametre = move_group_interface_ptr->getPlannerParams(planner_id,"arm_group");
-
-    std::map<std::string, std::string>::iterator it;
-    for (it = parametre.begin(); it != parametre.end(); it++)
-    {
-      std::cout << it->first    // string (key)
-      << " : "
-      << it->second   // string's value 
-      << std::endl;
-    }
-    std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
-    //parametre["type"] = "geometric::LazyPRM";
-    //std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
-
-    //move_group_interface.setPlannerParams(planner_id, "arm_group", parametre);
-
-
-
-    move_group_interface_ptr->setPlanningTime(10);
-    /** \brief Set a scaling factor for optionally reducing the maximum joint velocity.
-        Allowed values are in (0,1]. The maximum joint velocity specified
-        in the robot model is multiplied by the factor. If the value is 0, it is set to
-        the default value, which is defined in joint_limits.yaml of the moveit_config.
-        If the value is greater than 1, it is set to 1.0. */
-    move_group_interface_ptr->setMaxVelocityScalingFactor(1.0);
-
-    /** \brief Set a scaling factor for optionally reducing the maximum joint acceleration.
-        Allowed values are in (0,1]. The maximum joint acceleration specified
-        in the robot model is multiplied by the factor. If the value is 0, it is set to
-        the default value, which is defined in joint_limits.yaml of the moveit_config.
-        If the value is greater than 1, it is set to 1.0. */
-    move_group_interface_ptr->setMaxAccelerationScalingFactor(1.0);
-
-
-
-
-
-
-    //std::cout<<planner_test*<<std::endl;
-
-
-    moveit_msgs::PositionConstraint pcm;
-    pcm.link_name = "link_tool";
-    pcm.header.frame_id = "base_link";
-    
-    shape_msgs::SolidPrimitive work_box;
-    work_box.type = work_box.BOX;
-    work_box.dimensions.resize(3);
-    work_box.dimensions[work_box.BOX_X] = 0.60; 
-    work_box.dimensions[work_box.BOX_Y] = 1.0; 
-    work_box.dimensions[work_box.BOX_Z] = 0.9; 
-
-    geometry_msgs::Pose work_box_pose;
-    work_box_pose.orientation.w = 1.0;
-    work_box_pose.position.x = 0.5;
-    work_box_pose.position.y = 0.155;
-    work_box_pose.position.z = 0.45;
-
-    pcm.constraint_region.primitives.push_back(work_box);
-    pcm.constraint_region.primitive_poses.push_back(work_box_pose);
-    pcm.weight = 1.0;
-
-    moveit_msgs::OrientationConstraint ocm;
-    ocm.link_name = "link_6";
-    ocm.header.frame_id = "base_link";
-    ocm.orientation.x = 0.93373;
-    ocm.orientation.y = -0.35765;
-    ocm.orientation.z = 0.0057657;
-    ocm.orientation.w = 0.014457;
-    ocm.absolute_x_axis_tolerance = 2.0; //90 degre abs
-    ocm.absolute_y_axis_tolerance = 2.0;
-    ocm.absolute_z_axis_tolerance = 10.0;
-    ocm.weight = 1.0;
-    moveit_msgs::JointConstraint jc1;
-    jc1.joint_name = "joint_1";  
-    jc1.position = 0.0;
-    jc1.tolerance_above = 0.0; //80 degrés
-    jc1.tolerance_below = 2.8;
-    jc1.weight = 1.0; 
-
-    moveit_msgs::JointConstraint jc2;
-    jc2.joint_name = "joint_2";  
-    jc2.position = 0.0;
-    jc2.tolerance_above = 1.04; //60
-    jc2.tolerance_below = 0.7; //40
-    jc2.weight = 1.0; 
-
-    moveit_msgs::JointConstraint jc3;
-    jc3.joint_name = "joint_3";
-    jc3.position = 0.0;
-    jc3.tolerance_above = 2.53; //145
-    jc3.tolerance_below = 0.0; //+40
-    jc3.weight = 1.0;
-
-    moveit_msgs::JointConstraint jc4;
-    jc4.joint_name = "joint_4";  
-    jc4.position = 0.0;
-    jc4.tolerance_above = 2.27; //130
-    jc4.tolerance_below = 2.27;
-    jc4.weight = 1.0; 
-
-
-    moveit_msgs::JointConstraint jc5;
-    jc5.joint_name = "joint_5";  
-    jc5.position = 0.0;
-    jc5.tolerance_above = 2.39; //137
-    jc5.tolerance_below = 0; //115
-    jc5.weight = 1.0; 
-
-    moveit_msgs::JointConstraint jc6;
-    jc6.joint_name = "joint_6";  
-    jc6.position = 0.0;
-    jc6.tolerance_above = 3.14; //180
-    jc6.tolerance_below = 3.15;
-    jc6.weight = 1.0; 
-
-    moveit_msgs::Constraints test_constraints;
-    //test_constraints.orientation_constraints.push_back(ocm);
-    //test_constraints.position_constraints.push_back(pcm);
-    test_constraints.joint_constraints.push_back(jc1);
-    test_constraints.joint_constraints.push_back(jc2);
-    test_constraints.joint_constraints.push_back(jc3);
-    test_constraints.joint_constraints.push_back(jc4);
-    test_constraints.joint_constraints.push_back(jc5);
-    //test_constraints.joint_constraints.push_back(jc6);
-    move_group_interface_ptr->setPathConstraints(test_constraints);
 
   }
 
@@ -1684,6 +1360,235 @@ public:
 
     return tf_tcp_in_bari;
 
+  }
+
+  std::vector<std::vector<double>> go_to_position(std::vector<double> target_pose){
+
+
+    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
+    text_pose.translation().z() = 1.3;
+
+    //visual_tools.publishText(text_pose, " current : show target_pose_final", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    //visual_tools.publishAxisLabeled(target_pose, "target_pose_final");
+    //visual_tools.trigger(); // to apply changes
+
+    ros::NodeHandle nh;
+
+
+
+    // Fetch the current planning scene state once
+    auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
+    planning_scene_monitor->requestPlanningSceneState();
+    planning_scene_monitor::LockedPlanningSceneRO planning_scene(planning_scene_monitor);
+
+
+
+    // Visualize frames as rviz markers
+    ros::Publisher marker_publisher = nh.advertise<visualization_msgs::MarkerArray>("rviz_visual_tools", 10);
+    auto showFrames = [&](geometry_msgs::PoseStamped target, const std::string& eef) {
+      visualization_msgs::MarkerArray markers;
+      // convert target pose into planning frame
+      Eigen::Isometry3d tf;
+      tf2::fromMsg(target.pose, tf); //pose in bary frame
+      target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id) * tf); //world to bary * pose in bary = pose in world
+      target.header.frame_id = planning_scene->getPlanningFrame();
+      createFrameMarkers(markers, target, "target");
+
+      // convert eef in pose relative to panda_hand
+      target.header.frame_id = "bari0";
+      target.pose = tf2::toMsg(planning_scene->getFrameTransform(target.header.frame_id).inverse() *
+                              planning_scene->getFrameTransform(eef)); //bari to world * world to eef = bari to eef
+      createFrameMarkers(markers, target, "eef", true);
+
+      marker_publisher.publish(markers);
+    };
+
+
+
+
+
+
+    // robot_state::RobotState begin_state(*move_group_interface.getCurrentState());
+
+    // std::vector<double> init_state;
+    // begin_state.copyJointGroupPositions(joint_model_group, init_state);
+
+    int number_joint = 6;
+
+    //std::chrono::high_resolution_clock::time_point begin_ik = std::chrono::high_resolution_clock::now();
+
+    // double min_dist = 9000;
+
+
+    // for (int k=0; k<8 ; k++){
+    //   robot_state::RobotState final_state(*move_group_interface.getCurrentState());
+
+    //   final_state.setFromIK(joint_model_group,target_pose);
+
+
+    //   std::vector<double> joint_group_positions_final_ik;
+    //   final_state.copyJointGroupPositions(joint_model_group, joint_group_positions_final_ik);
+
+    //   planning_scene::PlanningScene planning_scene(kinematic_model);
+
+    //   bool constrained = planning_scene_interface.isStateConstrained(final_state, test_constraints);
+    //   ROS_INFO_STREAM("Test 7: final state is "
+    //                   << (constrained ? "constrained" : "not constrained"));
+
+    //   for (int i =0 ; i< number_joint  ; i++ )
+    //   {
+    //     std::cout << "ik1 i = " << i << " : " << joint_group_positions_final_ik[i]*180/3.14159265 << std::endl;
+    //   }
+
+    //   double dist6D = distance6D((double) joint_group_positions_final_ik[0]*180/3.14159265,(double) joint_group_positions_final_ik[1]*180/3.14159265,(double) joint_group_positions_final_ik[2]*180/3.14159265,
+    //                            (double) joint_group_positions_final_ik[3]*180/3.14159265,(double) joint_group_positions_final_ik[4]*180/3.14159265,(double) joint_group_positions_final_ik[5]*180/3.14159265,
+    //                            (double) init_state[0]*180/3.14159265,                    (double) init_state[1]*180/3.14159265,                    (double) init_state[2]*180/3.14159265,
+    //                            (double) init_state[3]*180/3.14159265,                    (double) init_state[4]*180/3.14159265,                    (double) init_state[5]*180/3.14159265);
+
+
+    //   std::cout << "DISTANCE ULT 6D = " << dist6D << std::endl;
+
+    //   if (dist6D < min_dist){
+    //     move_group_interface.setJointValueTarget(final_state);
+    //   }
+    // }
+
+
+    // std::chrono::high_resolution_clock::time_point end_ik = std::chrono::high_resolution_clock::now();
+
+    // double time_ik = std::chrono::duration_cast<std::chrono::microseconds>(end_ik-begin_ik).count()/1000000.0;
+
+    // std::cout<< "TIME TO IK TOTAL : " << time_ik << " s " <<std::endl;
+
+
+
+
+    // robot_state::RobotState final_state(*move_group_interface.getCurrentState());
+    // final_state.setFromIK(joint_model_group,target_pose);
+
+    // move_group_interface.setJointValueTarget(final_state);
+
+
+
+
+
+
+
+    // Eigen::Isometry3d tf_tcp_in_bari;
+
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+
+
+    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+    // tf_transformed.header.frame_id = "bari0";
+
+
+    //showFrames(target_pose, target_pose.header.frame_id);
+    visual_tools_ptr->publishText(text_pose, "Show target frame", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    visual_tools_ptr->trigger(); // to apply changes
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+    // std::vector<geometry_msgs::PoseStamped> grasping_poses;
+
+    // Eigen::Isometry3d tf_tcp_in_bari;
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+    // tf_transformed.header.frame_id = "bari0";
+    // grasping_poses.push_back(tf_transformed);
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.02);
+    // tf_transformed.header.frame_id = "bari0";
+    // grasping_poses.push_back(tf_transformed);
+
+
+
+    // move_group_interface.setPoseTargets(grasping_poses);
+
+    std::cout << target_pose[0] <<std::endl;
+    std::cout << target_pose[1] <<std::endl;
+    std::cout << target_pose[2] <<std::endl;
+    std::cout << target_pose[3] <<std::endl;
+    std::cout << target_pose[4] <<std::endl;
+    std::cout << target_pose[5] <<std::endl;
+
+    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+    move_group_interface_ptr->setJointValueTarget(target_pose);
+
+
+
+    // /** \brief Get the current joint state goal in a form compatible to setJointValueTarget() */
+    // void getJointValueTarget(std::vector<double>& group_variable_values) const;
+
+
+    std::string planner_test = move_group_interface_ptr->getPlannerId();
+    std::cout<<"getPlannerId : "<<planner_test<<std::endl;
+
+
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    
+    double local_time_find_plan = 0;
+    bool success = false;
+    for (int i=0; i < 10 ;i++){
+      success = (move_group_interface_ptr->plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+
+      if (success) {
+        local_time_find_plan += my_plan.planning_time_;
+        break;
+      }
+      else {
+        local_time_find_plan += move_group_interface_ptr->getPlanningTime();
+        std::cout << "TRY AGAIN : " << i << std::endl;
+        NB_fail++;
+      }
+
+    }
+
+    if (!success) {
+      std::cerr << "FAIL TO FIND A PATH AFTER 10 TRY AGAIN" << std::endl;
+      exit(0);
+    }
+    else{
+
+    }
+    //my_plan.trajectory_.
+
+    std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
+    move_group_interface_ptr->execute(my_plan);
+    std::chrono::high_resolution_clock::time_point end_traj = std::chrono::high_resolution_clock::now();
+
+    double time_traj = std::chrono::duration_cast<std::chrono::microseconds>(end_traj-begin_traj).count()/1000000.0;
+
+    robot_trajectory::RobotTrajectory trajecto_state(move_group_interface_ptr->getCurrentState()->getRobotModel(), move_group_interface_ptr->getName());
+
+    trajecto_state.setRobotTrajectoryMsg(*move_group_interface_ptr->getCurrentState(), my_plan.trajectory_);
+
+    std::vector<std::vector<double>> trajecto_waypoint_joint;
+    for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
+    {
+
+      std::vector<double> waypoint_joint;
+      trajecto_state.getWayPointPtr(i)->copyJointGroupPositions(joint_model_group_ptr, waypoint_joint);
+      trajecto_waypoint_joint.push_back(waypoint_joint);
+    }
+
+
+
+
+
+    EigenSTL::vector_Vector3d path = evaluate_plan(my_plan, local_time_find_plan, time_traj, trajecto_state);
+
+    const double radius = 0.005;
+    visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
+    visual_tools_ptr->trigger();
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+
+
+    return trajecto_waypoint_joint;
   }
 
   std::vector<std::vector<double>> go_to_position(geometry_msgs::PoseStamped target_pose ){
@@ -2029,9 +1934,9 @@ public:
 
     // for (int k=0; k<grasp_poses.size(); k++){
     //   showFrames(grasp_poses[k], grasp_poses[k].header.frame_id);
-    //   visual_tools.publishText(text_pose, "Show target frame", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    //   visual_tools.trigger(); // to apply changes
-    //   //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+    //   visual_tools_ptr->publishText(text_pose, "Show target frame", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    //   visual_tools_ptr->trigger(); // to apply changes
+    //   visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
     // }
     if (ID_grasp != -1) {
 
@@ -2040,7 +1945,7 @@ public:
       showFrames(grasp_poses[ID_grasp], grasp_poses[ID_grasp].header.frame_id);
       visual_tools_ptr->publishText(text_pose, "Show target frame", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
       visual_tools_ptr->trigger(); // to apply changes
-      //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+      //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
       // std::vector<geometry_msgs::PoseStamped> grasping_poses;
@@ -2097,9 +2002,7 @@ public:
       std::cerr << "FAIL TO FIND A PATH AFTER 10 TRY AGAIN" << std::endl;
       exit(0);
     }
-    else{
 
-    }
     //my_plan.trajectory_.
 
     std::chrono::high_resolution_clock::time_point begin_traj = std::chrono::high_resolution_clock::now();
@@ -2137,6 +2040,18 @@ public:
     return trajecto_waypoint_joint;
   }
 
+  void export_trajectory(std::vector<std::vector<double>> traj0){
+    std::ofstream myfile ("/home/guillaume/ws_moveit/example.txt");
+    if (myfile.is_open())
+    {
+      myfile << "end_header" << "\n" << "\n";
+      for (int k=0; k<traj0.size(); k++){
+        myfile << "f " << traj0[k][0]*180.0/M_PI << " " << traj0[k][1]*180.0/M_PI  << " " << traj0[k][2]*180.0/M_PI  << " " << traj0[k][3]*180.0/M_PI  << " " << traj0[k][4]*180.0/M_PI  << " " << traj0[k][5]*180.0/M_PI  << "\n";
+      }
+      myfile.close();
+    }
+    else std::cout << "Unable to open file";
+  }
 
   std::vector<std::vector<double>> trajecto_approch(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped &pose_goal){
 
@@ -2228,7 +2143,7 @@ public:
   }
 
 
-  void trajecto_scan_to_bari(std::vector<moveit_msgs::CollisionObject> &collision_object_baris,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> bari_poses, int ID_grasp){
+  void trajecto_scan_to_bari(std::vector<moveit_msgs::CollisionObject> &collision_object_baris,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses, int ID_grasp){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -2239,88 +2154,22 @@ public:
 
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-    std::vector<std::vector<double>> traj6 = go_to_position(bari_poses[0], ID_grasp);
+    std::vector<std::vector<double>> traj0 = go_to_position(vec_grasping_poses[0], ID_grasp);
 
-  }
-
-
-
-  void trajecto_initial_to_scan_and_bari(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &bari_poses, int ID_grasp){
-
-
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    text_pose.translation().z() = 1.3;
-
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 7");
-    //move_group_interface.setStartStateToCurrentState();
-
-    move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
-
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 8");
-
-    std::vector<double> traj1 = go_to_position_begin(scan_pose);
-
-    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 9");
-
-
-    visual_tools_ptr->publishText(text_pose, "Go to scan position from origin", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools_ptr->trigger();
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-    const Eigen::Vector3d center(0.5,0.0,0.0);
-    //center.x;
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 6");
-
-
-    load_bari_in_scene(collision_object_baris, center);
-    load_carton_in_scene(collision_object_baris, center);
-
-
-    std::chrono::seconds dura70(70);
-
-    // Now, let's add the collision object into the world
-    // (using a vector that could contain additional objects)
-    //ROS_INFO_NAMED("tutorial", "Add an object into the world");
-    //planning_scene_interface.addCollisionObjects(collision_objects);
-
-    // Show text in RViz of status and wait for MoveGroup to receive and process the collision object message
-    visual_tools_ptr->publishText(text_pose, "Add object", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools_ptr->trigger();
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
-
-
-
-
-    visual_tools_ptr->deleteAllMarkers();
-    visual_tools_ptr->publishText(text_pose, " current : show bari position", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    //visual_tools.publishAxisLabeled(bari_poses[0], "bari_pose");
-    visual_tools_ptr->trigger(); // to apply changes
-
-
-
-
-
-
-
-
-    move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
-
-
-    trajecto_scan_to_bari(collision_object_baris, scan_pose, bari_poses, ID_grasp);
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
+    std::vector<std::vector<double>> traj1;
     if (ID_grasp != -1){
-      trajecto_approch(collision_object_baris, bari_poses[1][ID_grasp]);
+      traj1 = trajecto_approch(collision_object_baris, vec_grasping_poses[1][ID_grasp]);
     }
+    traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
+
+
+
+    export_trajectory(traj0);
 
   }
 
-  void trajecto_initial_to_scan_and_bari_robot(std::vector<moveit_msgs::CollisionObject> &collision_object_baris,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &bari_poses, int ID_grasp){
+
+  void trajecto_initial_to_scan_and_bari_robot(std::vector<moveit_msgs::CollisionObject> &collision_object_baris,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses, int ID_grasp){
 
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2328,9 +2177,29 @@ public:
 
     move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
 
-    //scan_pose = get_pose("please give the SCAN pose in 1 line : tx ty tz rx ry rz");
+    std::vector<double> vec_joint; 
 
-    std::vector<double> traj1 = go_to_position_begin(scan_pose);
+    // moveit::core::RobotStatePtr current_state = move_group_interface_ptr->getCurrentState();
+    // current_state->copyJointGroupPositions(joint_model_group_ptr, vec_joint);
+    // std::cout << vec_joint.size() << std::endl;
+
+
+    fill_vector_cin_angle(vec_joint, "please give the J_INIT pose in 1 line : j1 j2 j3 j4 j5 j6");
+
+
+
+    std::vector<std::vector<double>> traj1 = go_to_position(vec_joint);
+
+
+
+    scan_pose = get_pose("please give the SCAN pose in 1 line : tx ty tz rx ry rz");
+
+    move_group_interface_ptr->setStartStateToCurrentState();
+
+
+    std::vector<std::vector<double>> traj2 = go_to_position(scan_pose);
+
+    export_trajectory(traj2);
 
     visual_tools_ptr->publishText(text_pose, "Go to scan position from origin", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
     visual_tools_ptr->trigger();
@@ -2338,8 +2207,7 @@ public:
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
-    const Eigen::Vector3d center(0.5,0.0,0.0);
-    //center.x;
+
 
     //load_bari_in_scene(planning_scene_interface, move_group_interface, collision_object_baris, center);
     //load_carton_in_scene(visual_tools, planning_scene_interface, move_group_interface, collision_object_baris, center);
@@ -2360,7 +2228,7 @@ public:
 
     // Now, let's add the collision object into the world
     // (using a vector that could contain additional objects)
-    //ROS_INFO_NAMED("tutorial", "Add an object into the world");
+    ROS_INFO_NAMED("tutorial", "HELLLLO");
     //planning_scene_interface.addCollisionObjects(collision_objects);
 
     // Show text in RViz of status and wait for MoveGroup to receive and process the collision object message
@@ -2379,7 +2247,29 @@ public:
     visual_tools_ptr->trigger(); // to apply changes
 
 
+    load_bari_in_scene_robot( collision_object_baris);
 
+    //TODO CHANGE
+
+    //int ID_grasp = 1;
+    std::cout << "give the ID_grasp (-1 if you want to let moveit choose) : " ;
+    std::cin >> ID_grasp ;
+    std::cout << "ID_grasp " << ID_grasp << std::endl ;
+
+    if (ID_grasp != -1){
+      vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
+      vec_grasping_poses[1][ID_grasp].header.frame_id = "bari0";
+    }
+    else{
+      for (int k=0; k<vec_grasping_poses[0].size(); k++){
+        vec_grasping_poses[0][k].header.frame_id = "bari0";
+        vec_grasping_poses[1][k].header.frame_id = "bari0";
+      }
+    }
+    for (int k=0; k<vec_grasping_poses[0].size(); k++){
+      vec_grasping_poses[0][k].header.frame_id = "bari0";
+      vec_grasping_poses[1][k].header.frame_id = "bari0";
+    }
 
 
 
@@ -2388,13 +2278,12 @@ public:
     move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
 
 
-    trajecto_scan_to_bari(collision_object_baris, scan_pose, bari_poses, ID_grasp);
+    trajecto_scan_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
 
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
-    if (ID_grasp != -1){
-      trajecto_approch(collision_object_baris, bari_poses[1][ID_grasp]);
-    }
+    //TODO
+    //export_trajectory(traj6);
 
   }
 
@@ -2419,11 +2308,9 @@ public:
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
-    const Eigen::Vector3d center(0.5,0.0,0.0);
-    //center.x;
 
-    load_bari_in_scene(collision_object_baris, center);
-    load_carton_in_scene(collision_object_baris, center);
+    load_bari_in_scene(collision_object_baris);
+    load_carton_in_scene(collision_object_baris);
 
 
     std::chrono::seconds dura70(70);
@@ -2470,57 +2357,6 @@ public:
 
 
 
-
-  void trajecto_initial_to_scan_and_bari2(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, std::vector<geometry_msgs::PoseStamped> &bari_poses){
-
-
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    text_pose.translation().z() = 1.3;
-
-    move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
-
-
-    std::vector<double> traj1 = go_to_position_begin(scan_pose);
-
-    visual_tools_ptr->publishText(text_pose, "Go to scan position from origin", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools_ptr->trigger();
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-    const Eigen::Vector3d center(0.5,0.0,0.0);
-    //center.x;
-
-    load_bari_in_scene2(collision_object_baris, center);
-
-
-    std::chrono::seconds dura70(70);
-
-    // Now, let's add the collision object into the world
-    // (using a vector that could contain additional objects)
-    //ROS_INFO_NAMED("tutorial", "Add an object into the world");
-    //planning_scene_interface.addCollisionObjects(collision_objects);
-
-
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
-
-
-
-
-    visual_tools_ptr->deleteAllMarkers();
-    visual_tools_ptr->publishText(text_pose, " current : show bari position", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools_ptr->publishAxisLabeled(bari_poses[0].pose, "bari_pose");
-    visual_tools_ptr->trigger(); // to apply changes
-
-
-
-
-
-
-  }
-
-
-
   std::vector<std::vector<double>> trajecto_bari_to_scan( std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2539,7 +2375,7 @@ public:
   }
 
 
-  std::vector<std::vector<double>> trajecto_scan_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose){
+  std::vector<std::vector<double>> trajecto_scan_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped &final_pose){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -2551,6 +2387,8 @@ public:
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
     std::vector<std::vector<double>> traj6 = go_to_position(final_pose);
+
+    export_trajectory(traj6);
 
     return traj6;
 
@@ -2576,8 +2414,13 @@ public:
 
     std::cout<<"size traj"<<traj0.size()<<std::endl;
 
+    export_trajectory(traj0);
+     
+    //scan_pose = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
 
-    traj2 = trajecto_scan_to_out(collision_object_baris, scan_pose, final_pose);
+    traj2 = trajecto_scan_to_out(collision_object_baris, final_pose);
+
+    export_trajectory(traj2);
 
     traj0.insert(traj0.end(),std::make_move_iterator(traj2.begin()),std::make_move_iterator(traj2.end()));
 
@@ -2589,28 +2432,109 @@ public:
 
 
 
-    std::ofstream myfile ("/home/guillaume/ws_moveit/example.txt");
-    if (myfile.is_open())
-    {
-      for (int k=0; k<traj0.size(); k++){
-        myfile << "f " << traj0[k][0]*180.0/M_PI << " " << traj0[k][1]*180.0/M_PI  << " " << traj0[k][2]*180.0/M_PI  << " " << traj0[k][3]*180.0/M_PI  << " " << traj0[k][4]*180.0/M_PI  << " " << traj0[k][5]*180.0/M_PI  << "\n";
-      }
-      myfile.close();
-    }
-    else std::cout << "Unable to open file";
 
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
     return traj0;
 
   }
+
+
+
+  std::vector<std::vector<double>> trajecto_bari_to_scan(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+
+    std::vector<std::vector<double>> traj0;
+    std::vector<std::vector<double>> traj1;
+
+    if (ID_grasp != -1){
+      traj0 = trajecto_approch(collision_object_baris, vec_grasping_poses[0][ID_grasp]);
+    }
+
+    std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+    traj1 = trajecto_bari_to_scan(collision_object_baris, scan_pose);
+
+    traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
+
+    std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+    export_trajectory(traj0);
+
+    return traj0;
+
+  }
+
+
+  std::vector<std::vector<double>> trajecto_scan_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+
+    std::vector<std::vector<double>> traj2;
+
+    traj2 = trajecto_scan_to_out(collision_object_baris, final_pose);
+
+    export_trajectory(traj2);
+
+    ROS_INFO_NAMED("tutorial", "Go to bari position from out"); 
+    //visual_tools.publishText(text_pose, "Go to bari position from out", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    //visual_tools.trigger();
+
+    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+    return traj2;
+
+  }
+
+
+  std::vector<std::vector<double>> trajecto_bari_to_out_by_scan_robot(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+
+    std::vector<std::vector<double>> traj0;
+    std::vector<std::vector<double>> traj1;
+    std::vector<std::vector<double>> traj2;
+
+    if (ID_grasp != -1){
+      traj0 = trajecto_approch(collision_object_baris, vec_grasping_poses[0][ID_grasp]);
+    }
+
+    std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+    traj1 = trajecto_bari_to_scan(collision_object_baris, scan_pose);
+
+    traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
+
+    std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+    export_trajectory(traj0);
+     
+    scan_pose = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
+
+    traj2 = trajecto_scan_to_out(collision_object_baris, final_pose);
+
+    export_trajectory(traj2);
+
+    traj0.insert(traj0.end(),std::make_move_iterator(traj2.begin()),std::make_move_iterator(traj2.end()));
+
+    std::cout<<"size traj"<<traj0.size()<<std::endl;
+
+    ROS_INFO_NAMED("tutorial", "Go to bari position from out"); 
+    //visual_tools.publishText(text_pose, "Go to bari position from out", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
+    //visual_tools.trigger();
+
+
+
+
+    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+
+    return traj0;
+
+  }
+
+
 
   void trajecto_bari_to_out_by_scan(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose ){
 
 
     trajecto_bari_to_scan(collision_object_baris, scan_pose);
 
-    trajecto_scan_to_out(collision_object_baris, scan_pose, final_pose);
+    trajecto_scan_to_out(collision_object_baris, final_pose);
 
   }
 
@@ -2644,8 +2568,13 @@ public:
     std::vector<std::vector<double>> traj5 = go_to_position(vec_grasping_poses[0], ID_grasp);
 
     if (ID_grasp != -1){
-      trajecto_approch(collision_object_baris, vec_grasping_poses[1][ID_grasp]);
+      std::vector<std::vector<double>> traj6 = trajecto_approch(collision_object_baris, vec_grasping_poses[1][ID_grasp]);
+      traj5.insert(traj5.end(),std::make_move_iterator(traj6.begin()),std::make_move_iterator(traj6.end()));
+
+      export_trajectory(traj5);
     }
+
+    
 
 
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
@@ -2722,6 +2651,8 @@ public:
 
     std::vector<std::vector<double>> traj6 = go_to_position( final_pose);
 
+    export_trajectory(traj6);
+
   }
 
 
@@ -2743,6 +2674,88 @@ public:
 
   }
 
+  std::vector<std::vector<geometry_msgs::PoseStamped>> load_grasping_pose(float distance_approch, std::string FilePath){
+
+
+    std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses;
+    std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
+
+    //TODO CHANGE
+    std::ifstream fichier(FilePath);
+    //std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
+    //std::ifstream fichier("/home/guillaume/Téléchargements/5067976barillet005_SCHUNK-0340012MPG40ouvertv301centeredGripper_v1.5_a2_o14_r8_x20_y20_c0.001_success.txt");
+    
+    //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
+
+    if(fichier)
+    {
+      //L'ouverture s'est bien passée, on peut donc lire
+
+      std::string ligne; //Une variable pour stocker les lignes lues
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+      getline(fichier, ligne);
+
+
+      while(getline(fichier, ligne)) //Tant qu'on n'est pas à la fin, on lit
+      {
+          std::stringstream ss(ligne);
+
+          std::cout << ligne << std::endl;
+          std::string tx, ty, tz, rx, ry, rz;
+          std::getline(ss,tx,',');    
+          std::cout<<"\""<<tx<<"\""<<std::endl;
+          std::getline(ss,ty,','); 
+          std::cout<<", \""<<ty<<"\""<<std::endl;
+          std::getline(ss,tz,','); 
+          std::cout<<", \""<<tz<<"\""<<std::endl;
+          std::getline(ss,rx,',');    
+          std::cout<<"\""<<rx<<"\""<<std::endl;
+          std::getline(ss,ry,','); 
+          std::cout<<", \""<<ry<<"\""<<std::endl;
+          std::getline(ss,rz,','); 
+          std::cout<<", \""<<rz<<"\""<<std::endl;
+          Eigen::Isometry3d tf_tcp_in_bari;
+          tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
+          geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, distance_approch);
+          grasping_poses.push_back(tf_transformed);
+          tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+          grasping_poses_true.push_back(tf_transformed);
+
+      }
+    }
+    else
+    {
+      std::cout << "ERREUR: Impossible d'ouvrir le fichier en lecture." << std::endl;
+    }
+
+
+
+
+
+    // Eigen::Isometry3d tf_tcp_in_bari;
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
+    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
+    // grasping_poses.push_back(tf_transformed);
+    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
+    // grasping_poses_true.push_back(tf_transformed);
+    std::cout<<grasping_poses.size()<<std::endl;
+    vec_grasping_poses.push_back(grasping_poses);
+    vec_grasping_poses.push_back(grasping_poses_true);
+
+    return vec_grasping_poses;
+  } 
 
 
   void full_scenario(int M, int N){
@@ -3432,29 +3445,16 @@ public:
 
     //go to jinit
 
-    load_bari_in_scene_robot( collision_object_baris);
+ 
 
     //TODO CHANGE
-    int ID_grasp;// = 13; //bari
+    int ID_grasp; //bari
     //int ID_grasp = 1;
-    std::cout << "give the ID_grasp (-1 if you want to let moveit choose) : " ;
-    std::cin >> ID_grasp ;
-    std::cout << "ID_grasp " << ID_grasp << std::endl ;
 
-    if (ID_grasp != -1){
-      vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
-      vec_grasping_poses[1][ID_grasp].header.frame_id = "bari0";
-    }
-    else{
-      for (int k=0; k<vec_grasping_poses[0].size(); k++){
-        vec_grasping_poses[0][k].header.frame_id = "bari0";
-        vec_grasping_poses[1][k].header.frame_id = "bari0";
-      }
-    }
-
-    trajecto_initial_to_scan_and_bari_robot(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
 
     setup_planner();
+
+    trajecto_initial_to_scan_and_bari_robot(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
 
 
     for (int i = 0; i < M; i++){
@@ -3543,7 +3543,17 @@ public:
       
       // //planning_scene_interface.applyCollisionObject()
 
-      trajecto_bari_to_out_by_scan(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
+      final_poses[0] = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
+
+
+      //trajecto_bari_to_out_by_scan(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
+
+
+      trajecto_bari_to_scan(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
+
+
+      trajecto_scan_to_out(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
+
 
 
       // The result may look something like this:
@@ -3656,6 +3666,9 @@ public:
         // Replan, but now with the object in hand.
         move_group_interface_ptr->setStartStateToCurrentState();
 
+        final_poses[0] = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
+
+
         trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[0]);
 
 
@@ -3762,8 +3775,10 @@ public:
     // Replan, but now with the object in hand.
     move_group_interface_ptr->setStartStateToCurrentState();
 
+    final_poses[0] = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
 
-    trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[(M-1)*(N+1) + N + 1]);
+
+    trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[0]);
 
 
     // The result may look something like this:
@@ -3841,17 +3856,6 @@ public:
     scan_pose.pose.position.y = -0.71612;
     scan_pose.pose.position.z = 0.3414;
 
-    // scan_pose.pose.orientation.x = -0.64772;
-    // scan_pose.pose.orientation.y = 0.48432;
-    // scan_pose.pose.orientation.z = -0.011464;
-    // scan_pose.pose.orientation.w = 0.58802;
-    // scan_pose.pose.position.x = 0.021464;
-    // scan_pose.pose.position.y = -0.64255;
-    // scan_pose.pose.position.z = 0.42707;
-
-
-
-    std::vector<geometry_msgs::PoseStamped> bari_poses;
     std::vector<geometry_msgs::PoseStamped> final_poses;
 
 
@@ -3877,117 +3881,48 @@ public:
           final_poses.push_back(target_pose_final);
 
 
-          geometry_msgs::PoseStamped bari_pose;
-          bari_pose.header.frame_id = "base_link";
-
-          bari_pose.pose.orientation.x = 0.93373;
-          bari_pose.pose.orientation.y = -0.35765;
-          bari_pose.pose.orientation.z = 0.0057657;
-          bari_pose.pose.orientation.w = 0.014457;
-          bari_pose.pose.position.x = 0.5+ 0.04*xi;
-          bari_pose.pose.position.y = -0.05 -0.04+ 0.05*yi;
-          bari_pose.pose.position.z = 0.53731+0.02;
-          // bari_pose.orientation.x = 0.93373;
-          // bari_pose.orientation.y = -0.35765;
-          // bari_pose.orientation.z = 0.0057657;
-          // bari_pose.orientation.w = 0.014457;
-          // bari_pose.position.x = 0.5;
-          // bari_pose.position.y = -0.05 -0.04;
-          // bari_pose.position.z = 0.53731+0.02;
-      
-          bari_poses.push_back(bari_pose);
-
         }
       }
     }
 
-    std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
-    std::vector<geometry_msgs::PoseStamped> grasping_poses;
-    std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
+    std::string FilePath = "/home/guillaume/Téléchargements/somfyBarrel.txt";
 
-    //TODO CHANGE
-    std::ifstream fichier("/home/guillaume/Téléchargements/somfyBarrel.txt");
-    //std::ifstream fichier("/home/guillaume/Téléchargements/rolling.txt");
-
-    if(fichier)
-    {
-      //L'ouverture s'est bien passée, on peut donc lire
-
-      std::string ligne; //Une variable pour stocker les lignes lues
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-      getline(fichier, ligne);
-
-
-      while(getline(fichier, ligne)) //Tant qu'on n'est pas à la fin, on lit
-      {
-          std::stringstream ss(ligne);
-
-          std::cout << ligne << std::endl;
-          std::string tx, ty, tz, rx, ry, rz;
-          std::getline(ss,tx,',');    
-          std::cout<<"\""<<tx<<"\""<<std::endl;
-          std::getline(ss,ty,','); 
-          std::cout<<", \""<<ty<<"\""<<std::endl;
-          std::getline(ss,tz,','); 
-          std::cout<<", \""<<tz<<"\""<<std::endl;
-          std::getline(ss,rx,',');    
-          std::cout<<"\""<<rx<<"\""<<std::endl;
-          std::getline(ss,ry,','); 
-          std::cout<<", \""<<ry<<"\""<<std::endl;
-          std::getline(ss,rz,','); 
-          std::cout<<", \""<<rz<<"\""<<std::endl;
-          Eigen::Isometry3d tf_tcp_in_bari;
-          tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
-          geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.1);
-          grasping_poses.push_back(tf_transformed);
-          tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
-          grasping_poses_true.push_back(tf_transformed);
-          //Et on l'affiche dans la console 
-          //Ou alors on fait quelque chose avec cette ligne
-          //À vous de voir
-      }
-    }
-    else
-    {
-      std::cout << "ERREUR: Impossible d'ouvrir le fichier en lecture." << std::endl;
-    }
-
-
-
-
-
-    // Eigen::Isometry3d tf_tcp_in_bari;
-    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, 90);
-    // geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
-    // grasping_poses.push_back(tf_transformed);
-    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
-    // grasping_poses_true.push_back(tf_transformed);
-    // tf_tcp_in_bari = create_iso_tcp_in_bari(0.0, -0.011, -0.001, -90, 0, -90);
-    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.05);
-    // grasping_poses.push_back(tf_transformed);
-    // tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.00);
-    // grasping_poses_true.push_back(tf_transformed);
-    std::cout<<grasping_poses.size()<<std::endl;
-    vec_grasping_poses.push_back(grasping_poses);
-    vec_grasping_poses.push_back(grasping_poses_true);
-
-
-    //tf_transformed.header.frame_id = "bari0";
-
-
+    std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses = load_grasping_pose(0.05, FilePath);
 
     std::vector<moveit_msgs::CollisionObject> collision_object_baris;
+
+
+    move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
+
+    std::vector<double> vec_joint(6); 
+    vec_joint[0] = -90*M_PI/180.0;
+    // vec_joint.push_back(0);
+    // vec_joint.push_back(0);
+    // vec_joint.push_back(0);
+    // vec_joint.push_back(0);
+    // vec_joint.push_back(0);
+
+
+    std::vector<std::vector<double>> traj0 = go_to_position(vec_joint);
+
+
+    setup_planner();
+
+
+    move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
+
+    std::vector<std::vector<double>> traj1 = go_to_position(scan_pose);
+
+
+    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 9");
+
+    load_bari_in_scene(collision_object_baris);
+    load_carton_in_scene(collision_object_baris);
 
     //TODO CHANGE
     int ID_grasp = 13; //bari
     //int ID_grasp = 1;
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 5");
+    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 5");
 
     if (ID_grasp != -1){
       vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
@@ -4000,12 +3935,13 @@ public:
       }
     }
 
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 6");
+
+    move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
+    trajecto_scan_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
+
+    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
-    trajecto_initial_to_scan_and_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
-
-    setup_planner();
 
 
     for (int i = 0; i < M; i++){
@@ -4094,7 +4030,15 @@ public:
       
       // //planning_scene_interface.applyCollisionObject()
 
-      trajecto_bari_to_out_by_scan(collision_object_baris, scan_pose, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+      //trajecto_bari_to_out_by_scan(collision_object_baris, scan_pose, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+
+
+
+      trajecto_bari_to_scan(collision_object_baris, scan_pose, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+
+
+      trajecto_scan_to_out(collision_object_baris, scan_pose, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+
 
 
       // The result may look something like this:
@@ -4366,97 +4310,6 @@ public:
   }
 
 
-  void scenario_test_out_attach(moveit::planning_interface::MoveGroupInterface &move_group_interface, std::vector<moveit_msgs::CollisionObject> &collision_object_baris, moveit::planning_interface::PlanningSceneInterface &planning_scene_interface ,geometry_msgs::PoseStamped scan_pose, moveit_visual_tools::MoveItVisualTools &visual_tools, const moveit::core::JointModelGroup* joint_model_group, std::vector<geometry_msgs::PoseStamped> &final_poses, std::vector<geometry_msgs::PoseStamped> &bari_poses, int M, int N){
-
-    //#####
-    //##### begin scenario #####
-    //#####
-
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    
-    trajecto_initial_to_scan_and_bari(collision_object_baris, scan_pose, bari_poses);
-
-
-    setup_planner_test();
-    //setup_planner_test_constrain(move_group_interface);
-
-    // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
-    // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
-    ROS_INFO_NAMED("tutorial", "Attach the object to the robot: %d", 0);
-
-    std::chrono::seconds dura70(2);
-    for (int i = 0; i < 10; i++){
-
-
-      // moveit_msgs::AttachedCollisionObject aco;
-      // aco.object.id = collision_object_baris[0].id;
-      // aco.link_name = "link_tool";
-      // planning_scene_interface.applyAttachedCollisionObject(aco);
-
-
-      move_group_interface.attachObject(collision_object_baris[0].id, "link_tool");
-
-
-      move_group_interface.setStartStateToCurrentState();
-
-      trajecto_bari_to_out(collision_object_baris, scan_pose, final_poses[0]);
-
-      move_group_interface.setStartStateToCurrentState();
-
-      trajecto_out_to_bari(collision_object_baris, scan_pose, bari_poses[0]);
-
-    }
-
-
-
-    // The result may look something like this:
-    //
-    // .. image:: ./move_group_interface_tutorial_attached_object.gif
-    //    :alt: animation showing the arm moving differently once the object is attached
-    //
-    // Detaching and Removing Objects
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //
-    // Now, let's detach the cylinder from the robot's gripper.
-    ROS_INFO_NAMED("tutorial", "Detach the object from the robot : %d", 0);
-    move_group_interface.detachObject(collision_object_baris[0].id);
-
-    // Show text in RViz of status
-    visual_tools.deleteAllMarkers();
-    visual_tools.publishText(text_pose, "Object detached from robot", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-    /* Wait for MoveGroup to receive and process the attached collision object message */
-    //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is detached from the robot");
-
-
-
-
-
-
-    // Now, let's remove the objects from the world.
-    ROS_INFO_NAMED("tutorial", "Remove the objects from the world");
-    std::vector<std::string> object_ids;
-
-    for (std::vector<moveit_msgs::CollisionObject>::iterator it = collision_object_baris.begin() ; it != collision_object_baris.end(); it++)
-    {
-      moveit_msgs::CollisionObject obj = *it;
-      object_ids.push_back(obj.id);
-    }
-
-
-    //object_ids.push_back(object_to_attach.id);
-    planning_scene_interface.removeCollisionObjects(object_ids);
-
-    // Show text in RViz of status
-    visual_tools.publishText(text_pose, "Objects removed", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    visual_tools.trigger();
-
-
-  }
-
-
 
   geometry_msgs::Quaternion relative_quat_rotation(geometry_msgs::Quaternion q1 , geometry_msgs::Quaternion q2){
 
@@ -4685,9 +4538,9 @@ int main(int argc, char** argv)
   //moveit_engine_test.full_scenario( collision_object_baris, scan_pose, final_poses, bari_poses, grasping_poses, M, N);
 
   //moveit_engine_test.full_scenario_grasp(collision_object_baris, scan_pose, final_poses, bari_poses, vec_grasping_poses, M, N);
-  //moveit_engine_test.full_scenario_grasp( M, N);
+  moveit_engine_test.full_scenario_grasp( M, N);
 
-  moveit_engine_test.full_scenario_grasp_robot(M, N);
+  //moveit_engine_test.full_scenario_grasp_robot(M, N);
 
 
 
