@@ -254,26 +254,14 @@ public:
 
   }
 
-  void load_bari_in_scene(std::vector<moveit_msgs::CollisionObject> &collision_object_baris){
+  void load_bari_in_scene_simulation(std::vector<moveit_msgs::CollisionObject> &collision_object_baris){
 
 
     // TODO CHANGE
     //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
     std::string modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
-    //std::string modelpath = "package://geometric_shapes/test/resources/rc2.obj";
-    ROS_INFO("mesh loades : %s ",modelpath.c_str());
+    shape_msgs::Mesh mesh_bary = load_mesh(modelpath);
 
-    static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
-    shapes::Mesh* cao_bary = shapes::createMeshFromResource(modelpath,scale);
-
-    ROS_INFO("mesh loades : %i triangles : %s ",cao_bary->triangle_count,modelpath.c_str());
-
-
-    shape_msgs::Mesh mesh_bary;
-    shapes::ShapeMsg mesh_bary_msg;
-
-    shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
-    mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
 
     int N_bari_x = 2;
     int N_bari_y = 4;
@@ -282,18 +270,12 @@ public:
       for (int yi = 0; yi< N_bari_y;yi++){
         for (int zi = 0; zi< N_bari_z;zi++){
 
-          // Now let's define a collision object ROS message for the robot to avoid.
-          moveit_msgs::CollisionObject collision_object_bari;
-          collision_object_bari.header.frame_id = move_group_interface_ptr->getPlanningFrame();
-
           char id_bari[20];
           sprintf(id_bari,"bari%d",xi+N_bari_x*yi);
-
-          // The id of the object is used to identify it.
-          collision_object_bari.id = id_bari;
+          std::string str_id_obj=id_bari;
 
           // Define a pose for the box (specified relative to frame_id)
-          geometry_msgs::Pose pose;
+          geometry_msgs::PoseStamped pose;
 
           tf2::Quaternion q_rot;
 
@@ -317,40 +299,35 @@ public:
           // pose.orientation.z = -0.3848079;
           // pose.orientation.w = 0.5935097;
 
-          pose.orientation.x = 0;
-          pose.orientation.y = 0.7071068;
-          pose.orientation.z = 0;
-          pose.orientation.w = 0.7071068;
+          pose.pose.orientation.x = 0; //bari prise 16
+          pose.pose.orientation.y = 0.7071068;
+          pose.pose.orientation.z = 0;
+          pose.pose.orientation.w = 0.7071068;
           
 
           //double res_x = center.x -0.5 + 0.1*xi;
-          pose.position.x = -0.08+ 0.05*yi;
-          pose.position.y = -0.74+ 0.04*xi;
-          pose.position.z = 0.06;
+          pose.pose.position.x = -0.08+ 0.05*yi;
+          pose.pose.position.y = -0.74+ 0.04*xi;
+          pose.pose.position.z = 0.06;
 
-          collision_object_bari.meshes.push_back(mesh_bary);
-          collision_object_bari.mesh_poses.push_back(pose);
-          collision_object_bari.operation = collision_object_bari.ADD;
+          pose.header.frame_id = "base_link";
 
-          collision_object_baris.push_back(collision_object_bari);
+          load_obj_in_scene( collision_object_baris, mesh_bary, pose, str_id_obj);
+
         }
       }
     }
     // Now, let's add the collision object into the world
     // (using a vector that could contain additional objects)
-    ROS_INFO_NAMED("tutorial", "Add an object into the world");
-    planning_scene_interface_ptr->addCollisionObjects(collision_object_baris);
+    //ROS_INFO_NAMED("tutorial", "Add an object into the world");
+    //planning_scene_interface_ptr->addCollisionObjects(collision_object_baris);
 
 
   }
 
-  void load_bari_in_scene_robot( std::vector<moveit_msgs::CollisionObject> &collision_object_baris){
 
+  shape_msgs::Mesh load_mesh(std::string modelpath){
 
-    // TODO CHANGE
-    //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
-    std::string modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
-    //std::string modelpath = "package://geometric_shapes/test/resources/rc2.obj";
     ROS_INFO("mesh loades : %s ",modelpath.c_str());
 
     static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
@@ -365,55 +342,51 @@ public:
     shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
     mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
 
-    int N_bari_x = 1;
-    int N_bari_y = 1;
-    int N_bari_z = 1;
-    for (int xi = 0; xi< N_bari_x;xi++){
-      for (int yi = 0; yi< N_bari_y;yi++){
-        for (int zi = 0; zi< N_bari_z;zi++){
+    return (mesh_bary);
+    
+  }
 
-          // Now let's define a collision object ROS message for the robot to avoid.
-          moveit_msgs::CollisionObject collision_object_bari;
+  void load_obj_in_scene( std::vector<moveit_msgs::CollisionObject> &collision_object_baris, shape_msgs::Mesh mesh_bary, geometry_msgs::PoseStamped pose, std::string str_id_obj){
 
-          //char id_bari[20];
-          //sprintf(id_bari,"bari%d",xi+N_bari_x*yi);
 
-          // The id of the object is used to identify it.
-          collision_object_bari.id = "bari0";
+    // Now let's define a collision object ROS message for the robot to avoid.
+    moveit_msgs::CollisionObject collision_object_bari;
 
-          // Define a pose for the box (specified relative to frame_id)
-          geometry_msgs::PoseStamped pose = get_pose("please give the bari pose in 1 line : tx ty tz rx ry rz");
+    //char id_bari[20];
+    //sprintf(id_bari,"bari%d",xi+N_bari_x*yi);
 
-          //tf2::Quaternion q_rot;
+    // The id of the object is used to identify it.
+    collision_object_bari.id = str_id_obj;
 
-          // TODO CHANGE
-          //q_rot.setRPY(3.14,0.00,0.00); //rk
-          //q_rot.setRPY(1.57,3.14,-3.14); //bari
-          //q_rot.setRPY(1.60,1.58,-3.14); //bari
-          //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
-          //q_rot = random_quaternion();
 
-          // Stuff the new rotation back into the pose. This requires conversion into a msg type
-          //tf2::convert(q_rot, pose.orientation);
-          // pose.orientation.x = -0.5;
-          // pose.orientation.y = 0.5;
-          // pose.orientation.z = -0.5;
-          // pose.orientation.w = 0.5;
+    //tf2::Quaternion q_rot;
 
-          // //double res_x = center.x -0.5 + 0.1*xi;
-          // pose.position.x = -0.08+ 0.05*yi;
-          // pose.position.y = -0.74+ 0.04*xi;
-          // pose.position.z = 0.06;
-          collision_object_bari.header.frame_id = pose.header.frame_id;
+    // TODO CHANGE
+    //q_rot.setRPY(3.14,0.00,0.00); //rk
+    //q_rot.setRPY(1.57,3.14,-3.14); //bari
+    //q_rot.setRPY(1.60,1.58,-3.14); //bari
+    //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
+    //q_rot = random_quaternion();
 
-          collision_object_bari.meshes.push_back(mesh_bary);
-          collision_object_bari.mesh_poses.push_back(pose.pose);
-          collision_object_bari.operation = collision_object_bari.ADD;
+    // Stuff the new rotation back into the pose. This requires conversion into a msg type
+    //tf2::convert(q_rot, pose.orientation);
+    // pose.orientation.x = -0.5;
+    // pose.orientation.y = 0.5;
+    // pose.orientation.z = -0.5;
+    // pose.orientation.w = 0.5;
 
-          collision_object_baris.push_back(collision_object_bari);
-        }
-      }
-    }
+    // //double res_x = center.x -0.5 + 0.1*xi;
+    // pose.position.x = -0.08+ 0.05*yi;
+    // pose.position.y = -0.74+ 0.04*xi;
+    // pose.position.z = 0.06;
+    collision_object_bari.header.frame_id = pose.header.frame_id;
+
+    collision_object_bari.meshes.push_back(mesh_bary);
+    collision_object_bari.mesh_poses.push_back(pose.pose);
+    collision_object_bari.operation = collision_object_bari.ADD;
+
+    collision_object_baris.push_back(collision_object_bari);
+
     // Now, let's add the collision object into the world
     // (using a vector that could contain additional objects)
     ROS_INFO_NAMED("tutorial", "Add an object into the world");
@@ -427,80 +400,41 @@ public:
 
     //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
     std::string modelpath = "package://geometric_shapes/test/resources/Contenant_barillet.stl";
-    ROS_INFO("mesh loades : %s ",modelpath.c_str());
-
-    static const Eigen::Vector3d scale(0.001, 0.001, 0.001);
-    shapes::Mesh* cao_bary = shapes::createMeshFromResource(modelpath,scale);
-
-    ROS_INFO("mesh loades : %i triangles : %s ",cao_bary->triangle_count,modelpath.c_str());
-
-
-    shape_msgs::Mesh mesh_bary;
-    shapes::ShapeMsg mesh_bary_msg;
-
-    shapes::constructMsgFromShape(cao_bary,mesh_bary_msg);
-    mesh_bary = boost::get<shape_msgs::Mesh>(mesh_bary_msg);
+    shape_msgs::Mesh mesh_bary = load_mesh(modelpath);
 
     // Now let's define a collision object ROS message for the robot to avoid.
     moveit_msgs::CollisionObject collision_object_bari;
-    collision_object_bari.header.frame_id = move_group_interface_ptr->getPlanningFrame();
 
     // The id of the object is used to identify it.
-    collision_object_bari.id = "carton";
+    std::string str_id_obj = "carton";
 
     // Define a pose for the box (specified relative to frame_id)
-    geometry_msgs::Pose pose;
+    geometry_msgs::PoseStamped pose;
 
     tf2::Quaternion q_rot;
 
     // TODO CHANGE
     //q_rot.setRPY(3.14,0.00,0.00); //rk
     //q_rot.setRPY(1.57,3.14,-3.14); //bari
-    //q_rot.setRPY(1.57,0.0,0.0); //bari
-    q_rot.setRPY(0.0,0.0,0.0); //bari prise 13
+    q_rot.setRPY(1.57,0.0,0.0); //bari
+    //q_rot.setRPY(0.0,0.0,0.0); //bari prise 13
     //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
     //q_rot = random_quaternion();
 
     // Stuff the new rotation back into the pose. This requires conversion into a msg type
-    tf2::convert(q_rot, pose.orientation);
+    tf2::convert(q_rot, pose.pose.orientation);
 
 
-    pose.position.x = 0.0;
-    pose.position.y = -0.7;
-    pose.position.z = 0.2;
+    pose.pose.position.x = 0.0;
+    pose.pose.position.y = -0.7;
+    pose.pose.position.z = 0.2;
 
-    //visual_tools.processCollisionObjectMsg(collision_object_bari, rviz_visual_tools::BROWN);
+    pose.header.frame_id = "base_link";
 
-    collision_object_bari.meshes.push_back(mesh_bary);
-    collision_object_bari.mesh_poses.push_back(pose);
-    collision_object_bari.operation = collision_object_bari.ADD;
-
-
-    shape_msgs::SolidPrimitive work_box;
-    work_box.type = work_box.BOX;
-    work_box.dimensions.resize(3);
-    work_box.dimensions[work_box.BOX_X] = 0.9; 
-    work_box.dimensions[work_box.BOX_Y] = 0.6; 
-    work_box.dimensions[work_box.BOX_Z] = 0.8; 
-
-    geometry_msgs::Pose work_box_pose;
-    work_box_pose.orientation.w = 1.0;
-    work_box_pose.position.y = -0.7;
-    work_box_pose.position.x = 0.25;
-    work_box_pose.position.z = 0.3;
+    load_obj_in_scene(collision_object_baris, mesh_bary, pose, str_id_obj);
 
 
 
-    //collision_object_bari.primitives.push_back(work_box);
-    //collision_object_bari.primitive_poses.push_back(work_box_pose);
-    //collision_object_bari.operation = collision_object_bari.ADD;
-
-    collision_object_baris.push_back(collision_object_bari);
-
-    // Now, let's add the collision object into the world
-    // (using a vector that could contain additional objects)
-    ROS_INFO_NAMED("tutorial", "Add an object into the world");
-    planning_scene_interface_ptr->addCollisionObjects(collision_object_baris);
 
 
   }
@@ -1950,7 +1884,7 @@ public:
 
 
 
-    load_bari_in_scene(collision_object_baris);
+    load_bari_in_scene_simulation(collision_object_baris);
     load_carton_in_scene(collision_object_baris);
 
 
@@ -3092,7 +3026,18 @@ public:
     visual_tools_ptr->trigger(); // to apply changes
 
 
-    load_bari_in_scene_robot( collision_object_baris);
+    // TODO CHANGE
+    //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
+    std::string modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
+    //std::string modelpath = "package://geometric_shapes/test/resources/rc2.obj";
+    shape_msgs::Mesh mesh_bary = load_mesh(modelpath);
+
+
+    // Define a pose for the box (specified relative to frame_id)
+    geometry_msgs::PoseStamped pose = get_pose("please give the bari pose in 1 line : tx ty tz rx ry rz");
+    std::string str_id_obj = "bari0";
+
+    load_obj_in_scene( collision_object_baris, mesh_bary, pose, str_id_obj);
 
     int ID_grasp; //bari
     //int ID_grasp = 1;
@@ -3102,18 +3047,18 @@ public:
     std::cout << "ID_grasp " << ID_grasp << std::endl ;
 
     if (ID_grasp != -1){
-      vec_grasping_poses[0][ID_grasp].header.frame_id = "bari0";
-      vec_grasping_poses[1][ID_grasp].header.frame_id = "bari0";
+      vec_grasping_poses[0][ID_grasp].header.frame_id = str_id_obj;
+      vec_grasping_poses[1][ID_grasp].header.frame_id = str_id_obj;
     }
     else{
       for (int k=0; k<vec_grasping_poses[0].size(); k++){
-        vec_grasping_poses[0][k].header.frame_id = "bari0";
-        vec_grasping_poses[1][k].header.frame_id = "bari0";
+        vec_grasping_poses[0][k].header.frame_id = str_id_obj;
+        vec_grasping_poses[1][k].header.frame_id = str_id_obj;
       }
     }
     for (int k=0; k<vec_grasping_poses[0].size(); k++){
-      vec_grasping_poses[0][k].header.frame_id = "bari0";
-      vec_grasping_poses[1][k].header.frame_id = "bari0";
+      vec_grasping_poses[0][k].header.frame_id = str_id_obj;
+      vec_grasping_poses[1][k].header.frame_id = str_id_obj;
     }
 
 
@@ -3269,8 +3214,13 @@ public:
 
         move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
 
-        load_bari_in_scene_robot( collision_object_baris);
+        //modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
+        //std::string modelpath = "package://geometric_shapes/test/resources/rc2.obj";
+        // Define a pose for the box (specified relative to frame_id)
+        pose = get_pose("please give the bari pose in 1 line : tx ty tz rx ry rz");
+        str_id_obj = "bari0";
 
+        load_obj_in_scene( collision_object_baris, mesh_bary, pose, str_id_obj);
 
         std::cout << "give the ID_grasp (-1 if you want to let moveit choose) : " ;
         std::cin >> ID_grasp ;
@@ -3594,8 +3544,8 @@ public:
 
     //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 9");
 
-    load_bari_in_scene(collision_object_baris);
-    //load_carton_in_scene(collision_object_baris);
+    load_bari_in_scene_simulation(collision_object_baris);
+    load_carton_in_scene(collision_object_baris);
 
     //TODO CHANGE
     //int ID_grasp = 13; //bari
