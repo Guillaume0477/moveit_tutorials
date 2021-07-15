@@ -302,14 +302,20 @@ public:
           //q_rot.setRPY(1.57,3.14,-3.14); //bari
           //q_rot.setRPY(1.60,1.58,-3.14); //bari
           //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
+          //q_rot.setRPY(-1.15,1.57,0.0);  //bari_rot
           //q_rot = random_quaternion();
 
           // Stuff the new rotation back into the pose. This requires conversion into a msg type
           //tf2::convert(q_rot, pose.orientation);
-          //pose.orientation.x = -0.5;
-          //pose.orientation.y = 0.5;
-          //pose.orientation.z = -0.5;
-          //pose.orientation.w = 0.5;
+          // pose.orientation.x = -0.5;
+          // pose.orientation.y = 0.5;
+          // pose.orientation.z = -0.5;
+          // pose.orientation.w = 0.5;
+
+          // pose.orientation.x = -0.3842906;
+          // pose.orientation.y = 0.5932874;
+          // pose.orientation.z = -0.3848079;
+          // pose.orientation.w = 0.5935097;
 
           pose.orientation.x = 0;
           pose.orientation.y = 0.7071068;
@@ -450,7 +456,8 @@ public:
     // TODO CHANGE
     //q_rot.setRPY(3.14,0.00,0.00); //rk
     //q_rot.setRPY(1.57,3.14,-3.14); //bari
-    q_rot.setRPY(1.57,0.0,0.0); //bari
+    //q_rot.setRPY(1.57,0.0,0.0); //bari
+    q_rot.setRPY(0.0,0.0,0.0); //bari prise 13
     //q_rot.setRPY(1.57,2.20,2.16);  //bari_rot
     //q_rot = random_quaternion();
 
@@ -1092,7 +1099,7 @@ public:
 
 
 
-    pose_transformed.pose = tf2::toMsg(tf_tcp_in_bari * tf_iso_translation * tf_iso_tool_to_tcp.inverse() * tf_iso_link6_to_tool.inverse()); //world to bary * pose in bary = pose in world
+    pose_transformed.pose = tf2::toMsg( tf_tcp_in_bari * tf_iso_translation * tf_iso_tool_to_tcp.inverse() * tf_iso_link6_to_tool.inverse()); //world to bary * pose in bary = pose in world
 
 
     return pose_transformed;
@@ -1108,9 +1115,9 @@ public:
     tf2::convert(q_test, tcp_in_bari.pose.orientation);
 
     //double res_x = center.x -0.5 + 0.1*xi;
-    tcp_in_bari.pose.position.x = 0.0;
-    tcp_in_bari.pose.position.y = -0.011;
-    tcp_in_bari.pose.position.z = -0.001;
+    tcp_in_bari.pose.position.x = tx;//0.0;
+    tcp_in_bari.pose.position.y = ty;//-0.011;
+    tcp_in_bari.pose.position.z = tz;//-0.001;
     Eigen::Isometry3d tf_tcp_in_bari;
     tf2::fromMsg(tcp_in_bari.pose, tf_tcp_in_bari); //pose in bary frame
 
@@ -3591,6 +3598,7 @@ public:
     //load_carton_in_scene(collision_object_baris);
 
     //TODO CHANGE
+    //int ID_grasp = 13; //bari
     int ID_grasp = 16; //bari
     //int ID_grasp = 1;
     //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo 5");
