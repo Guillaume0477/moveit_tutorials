@@ -2062,7 +2062,7 @@ public:
 
   }
 
-  void trajecto_out_to_bari(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &bari_pose){
+  void trajecto_out_to_bari(geometry_msgs::PoseStamped &bari_pose){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -2078,7 +2078,7 @@ public:
 
   }
 
-  void trajecto_out_to_bari( std::vector<moveit_msgs::CollisionObject> &collision_object_baris ,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+  void trajecto_out_to_bari(std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -2596,7 +2596,7 @@ public:
 
 
 
-        trajecto_out_to_bari(collision_object_baris, scan_pose, bari_poses[i*(N+1) + j + 1]);
+        trajecto_out_to_bari( bari_poses[i*(N+1) + j + 1]);
 
 
 
@@ -2693,7 +2693,7 @@ public:
 
 
 
-      trajecto_out_to_bari(collision_object_baris, scan_pose, bari_poses[i*(N+1) + N + 1]);
+      trajecto_out_to_bari( bari_poses[i*(N+1) + N + 1]);
 
       // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
       // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
@@ -3186,7 +3186,7 @@ public:
           }
         }
 
-        trajecto_out_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
+        trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
 
 
         // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
@@ -3295,7 +3295,7 @@ public:
       }
 
 
-      trajecto_out_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
+      trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
 
       // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
       // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
@@ -3674,7 +3674,7 @@ public:
           }
         }
 
-        trajecto_out_to_bari(collision_object_baris,scan_pose, vec_grasping_poses, ID_grasp);
+        trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
 
 
         // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
@@ -3783,7 +3783,7 @@ public:
       }
 
 
-      trajecto_out_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
+      trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
 
       // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
       // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
