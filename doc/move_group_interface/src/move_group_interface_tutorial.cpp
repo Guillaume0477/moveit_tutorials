@@ -677,6 +677,26 @@ public:
   }
 
 
+ void set_joint_constraint(std::vector<float> above_zero, std::vector<float> below_zero){
+    moveit_msgs::Constraints test_constraints;
+
+    for (int i = 0; i < above_zero.size()-1; i++){
+
+      moveit_msgs::JointConstraint jc1;
+      jc1.joint_name = "joint_" + std::to_string(i+1);  
+      std::cout << jc1.joint_name << std::endl;
+      jc1.position = 0.0;
+      jc1.tolerance_above = above_zero[i];//0.0; //80 degrés
+      jc1.tolerance_below = -below_zero[i];//3.0;
+      jc1.weight = 1.0; 
+
+      test_constraints.joint_constraints.push_back(jc1);
+
+    }
+
+    move_group_interface_ptr->setPathConstraints(test_constraints);
+
+  }
 
 
   // moveit::core::GroupStateValidityCallbackFn constraint_fn = boost::bind(&isIKStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
@@ -755,9 +775,6 @@ public:
 
 
 
-    //std::cout<<planner_test*<<std::endl;
-
-
     moveit_msgs::PositionConstraint pcm;
     pcm.link_name = "link_tool";
     pcm.header.frame_id = "base_link";
@@ -792,63 +809,14 @@ public:
     ocm.weight = 1.0;
 
 
-    moveit_msgs::JointConstraint jc1;
-    jc1.joint_name = "joint_1";  
-    jc1.position = 0.0;
-    jc1.tolerance_above = 0.0; //80 degrés
-    jc1.tolerance_below = 3.0;
-    jc1.weight = 1.0; 
+    std::vector<float> above = {0.0, 1.57, 2.53, 2.27, 2.39, 3.14};
+    std::vector<float> below = {-3.0, -0.7, -0.7, -2.27, -2, -3.15};
 
-    moveit_msgs::JointConstraint jc2;
-    jc2.joint_name = "joint_2";  
-    jc2.position = 0.0;
-    jc2.tolerance_above = 1.57; //90
-    jc2.tolerance_below = 0.7; //40
-    jc2.weight = 1.0; 
-
-    moveit_msgs::JointConstraint jc3;
-    jc3.joint_name = "joint_3";
-    jc3.position = 0.0;
-    jc3.tolerance_above = 2.53; //145
-    jc3.tolerance_below = 0.7; //+40
-    jc3.weight = 1.0;
-
-    moveit_msgs::JointConstraint jc4;
-    jc4.joint_name = "joint_4";  
-    jc4.position = 0.0;
-    jc4.tolerance_above = 2.27; //130
-    jc4.tolerance_below = 2.27;
-    jc4.weight = 1.0; 
-
-
-    moveit_msgs::JointConstraint jc5;
-    jc5.joint_name = "joint_5";  
-    jc5.position = 0.0;
-    jc5.tolerance_above = 2.39; //137
-    jc5.tolerance_below = 2; //115
-    jc5.weight = 1.0; 
-
-    moveit_msgs::JointConstraint jc6;
-    jc6.joint_name = "joint_6";  
-    jc6.position = 0.0;
-    jc6.tolerance_above = 3.14; //180
-    jc6.tolerance_below = 3.15;
-    jc6.weight = 1.0; 
-
-    moveit_msgs::Constraints test_constraints;
-    //test_constraints.orientation_constraints.push_back(ocm);
-    //test_constraints.position_constraints.push_back(pcm);
-    test_constraints.joint_constraints.push_back(jc1);
-    test_constraints.joint_constraints.push_back(jc2);
-    test_constraints.joint_constraints.push_back(jc3);
-    test_constraints.joint_constraints.push_back(jc4);
-    test_constraints.joint_constraints.push_back(jc5);
-    //test_constraints.joint_constraints.push_back(jc6);
-    move_group_interface_ptr->setPathConstraints(test_constraints);
-
+    set_joint_constraint(above, below);
 
   }
 
+ 
 
   EigenSTL::vector_Vector3d evaluate_plan(moveit::planning_interface::MoveGroupInterface::Plan &plan,double &local_time_find_plan, double &time_traj, robot_trajectory::RobotTrajectory &trajecto_state){
 
