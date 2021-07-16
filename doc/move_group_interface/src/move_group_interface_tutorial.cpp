@@ -1718,7 +1718,7 @@ public:
     else std::cout << "Unable to open file";
   }
 
-  std::vector<std::vector<double>> trajecto_approch(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped &pose_goal){
+  std::vector<std::vector<double>> trajecto_approch( geometry_msgs::PoseStamped &pose_goal){
 
     
 
@@ -1792,7 +1792,7 @@ public:
   }
 
 
-  void trajecto_scan_to_bari(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped bari_pose){
+  void trajecto_scan_to_bari( geometry_msgs::PoseStamped bari_pose){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -1808,7 +1808,7 @@ public:
   }
 
 
-  void trajecto_scan_to_bari(std::vector<moveit_msgs::CollisionObject> &collision_object_baris,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses, int ID_grasp){
+  void trajecto_scan_to_bari( std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses, int ID_grasp){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -1823,7 +1823,7 @@ public:
 
     std::vector<std::vector<double>> traj1;
     if (ID_grasp != -1){
-      traj1 = trajecto_approch(collision_object_baris, vec_grasping_poses[1][ID_grasp]);
+      traj1 = trajecto_approch( vec_grasping_poses[1][ID_grasp]);
     }
     traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
 
@@ -1888,7 +1888,7 @@ public:
     move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
 
 
-    trajecto_scan_to_bari(collision_object_baris, scan_pose, bari_poses[0]);
+    trajecto_scan_to_bari( bari_poses[0]);
 
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -1900,7 +1900,7 @@ public:
 
 
 
-  std::vector<std::vector<double>> trajecto_bari_to_scan( std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose){
+  std::vector<std::vector<double>> trajecto_bari_to_scan( geometry_msgs::PoseStamped scan_pose){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -1918,7 +1918,7 @@ public:
   }
 
 
-  std::vector<std::vector<double>> trajecto_scan_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped &final_pose){
+  std::vector<std::vector<double>> trajecto_scan_to_out( geometry_msgs::PoseStamped &final_pose){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -1946,12 +1946,12 @@ public:
     std::vector<std::vector<double>> traj2;
 
     if (ID_grasp != -1){
-      traj0 = trajecto_approch(collision_object_baris, vec_grasping_poses[0][ID_grasp]);
+      traj0 = trajecto_approch( vec_grasping_poses[0][ID_grasp]);
     }
 
     std::cout<<"size traj"<<traj0.size()<<std::endl;
 
-    traj1 = trajecto_bari_to_scan(collision_object_baris, scan_pose);
+    traj1 = trajecto_bari_to_scan( scan_pose);
 
     traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
 
@@ -1961,7 +1961,7 @@ public:
      
     //scan_pose = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
 
-    traj2 = trajecto_scan_to_out(collision_object_baris, final_pose);
+    traj2 = trajecto_scan_to_out( final_pose);
 
     export_trajectory(traj2);
 
@@ -1984,18 +1984,18 @@ public:
 
 
 
-  std::vector<std::vector<double>> trajecto_bari_to_scan(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+  std::vector<std::vector<double>> trajecto_bari_to_scan( geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
 
     std::vector<std::vector<double>> traj0;
     std::vector<std::vector<double>> traj1;
 
     if (ID_grasp != -1){
-      traj0 = trajecto_approch(collision_object_baris, vec_grasping_poses[0][ID_grasp]);
+      traj0 = trajecto_approch( vec_grasping_poses[0][ID_grasp]);
     }
 
     std::cout<<"size traj"<<traj0.size()<<std::endl;
 
-    traj1 = trajecto_bari_to_scan(collision_object_baris, scan_pose);
+    traj1 = trajecto_bari_to_scan(scan_pose);
 
     traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
 
@@ -2008,25 +2008,6 @@ public:
   }
 
 
-  std::vector<std::vector<double>> trajecto_scan_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
-
-    std::vector<std::vector<double>> traj2;
-
-    traj2 = trajecto_scan_to_out(collision_object_baris, final_pose);
-
-    export_trajectory(traj2);
-
-    ROS_INFO_NAMED("tutorial", "Go to bari position from out"); 
-    //visual_tools.publishText(text_pose, "Go to bari position from out", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-    //visual_tools.trigger();
-
-    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-    return traj2;
-
-  }
-
-
   std::vector<std::vector<double>> trajecto_bari_to_out_by_scan_robot(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
 
     std::vector<std::vector<double>> traj0;
@@ -2034,12 +2015,12 @@ public:
     std::vector<std::vector<double>> traj2;
 
     if (ID_grasp != -1){
-      traj0 = trajecto_approch(collision_object_baris, vec_grasping_poses[0][ID_grasp]);
+      traj0 = trajecto_approch( vec_grasping_poses[0][ID_grasp]);
     }
 
     std::cout<<"size traj"<<traj0.size()<<std::endl;
 
-    traj1 = trajecto_bari_to_scan(collision_object_baris, scan_pose);
+    traj1 = trajecto_bari_to_scan( scan_pose);
 
     traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
 
@@ -2049,7 +2030,7 @@ public:
      
     scan_pose = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
 
-    traj2 = trajecto_scan_to_out(collision_object_baris, final_pose);
+    traj2 = trajecto_scan_to_out( final_pose);
 
     export_trajectory(traj2);
 
@@ -2075,9 +2056,9 @@ public:
   void trajecto_bari_to_out_by_scan(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose ){
 
 
-    trajecto_bari_to_scan(collision_object_baris, scan_pose);
+    trajecto_bari_to_scan(scan_pose);
 
-    trajecto_scan_to_out(collision_object_baris, final_pose);
+    trajecto_scan_to_out( final_pose);
 
   }
 
@@ -2111,7 +2092,7 @@ public:
     std::vector<std::vector<double>> traj5 = go_to_position(vec_grasping_poses[0], ID_grasp);
 
     if (ID_grasp != -1){
-      std::vector<std::vector<double>> traj6 = trajecto_approch(collision_object_baris, vec_grasping_poses[1][ID_grasp]);
+      std::vector<std::vector<double>> traj6 = trajecto_approch( vec_grasping_poses[1][ID_grasp]);
       traj5.insert(traj5.end(),std::make_move_iterator(traj6.begin()),std::make_move_iterator(traj6.end()));
 
       export_trajectory(traj5);
@@ -2182,11 +2163,10 @@ public:
 
 
 
-  void trajecto_bari_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris,geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp, geometry_msgs::PoseStamped &final_pose){
-
+  void trajecto_bari_to_out(std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp, geometry_msgs::PoseStamped &final_pose){
 
     if (ID_grasp != -1){
-      trajecto_approch(collision_object_baris, vec_grasping_poses[0][ID_grasp]);
+      trajecto_approch( vec_grasping_poses[0][ID_grasp]);
     }
     move_group_interface_ptr->setStartStateToCurrentState();
 
@@ -2199,7 +2179,7 @@ public:
   }
 
 
-  void trajecto_bari_to_out(std::vector<moveit_msgs::CollisionObject> &collision_object_baris, geometry_msgs::PoseStamped scan_pose, geometry_msgs::PoseStamped &final_pose){
+  void trajecto_bari_to_out( geometry_msgs::PoseStamped &final_pose){
 
 
 
@@ -2667,7 +2647,7 @@ public:
         // Replan, but now with the object in hand.
         move_group_interface_ptr->setStartStateToCurrentState();
 
-        trajecto_bari_to_out(collision_object_baris, scan_pose, final_poses[i*(N+1) + j + 1]);
+        trajecto_bari_to_out(final_poses[i*(N+1) + j + 1]);
 
 
         // The result may look something like this:
@@ -2762,7 +2742,7 @@ public:
     move_group_interface_ptr->setStartStateToCurrentState();
 
 
-    trajecto_bari_to_out(collision_object_baris, scan_pose, final_poses[(M-1)*(N+1) + N + 1]);
+    trajecto_bari_to_out(final_poses[(M-1)*(N+1) + N + 1]);
 
 
     // The result may look something like this:
@@ -3036,7 +3016,7 @@ public:
     move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
 
 
-    trajecto_scan_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
+    trajecto_scan_to_bari( vec_grasping_poses, ID_grasp);
 
 
 
@@ -3132,10 +3112,10 @@ public:
       //trajecto_bari_to_out_by_scan(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
 
 
-      trajecto_bari_to_scan(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
+      trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
 
 
-      trajecto_scan_to_out(collision_object_baris, scan_pose, final_poses[0], vec_grasping_poses, ID_grasp);
+      trajecto_scan_to_out(final_poses[0]);
 
 
 
@@ -3257,7 +3237,7 @@ public:
         final_poses[0] = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
 
 
-        trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[0]);
+        trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses[0]);
 
 
         // The result may look something like this:
@@ -3366,7 +3346,7 @@ public:
     final_poses[0] = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
 
 
-    trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[0]);
+    trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses[0]);
 
 
     // The result may look something like this:
@@ -3534,7 +3514,7 @@ public:
 
 
     move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
-    trajecto_scan_to_bari(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp);
+    trajecto_scan_to_bari( vec_grasping_poses, ID_grasp);
 
     //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -3631,10 +3611,10 @@ public:
 
 
 
-      trajecto_bari_to_scan(collision_object_baris, scan_pose, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+      trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
 
 
-      trajecto_scan_to_out(collision_object_baris, scan_pose, final_poses[i*(N+1)], vec_grasping_poses, ID_grasp);
+      trajecto_scan_to_out(final_poses[i*(N+1)]);
 
 
 
@@ -3745,7 +3725,7 @@ public:
         // Replan, but now with the object in hand.
         move_group_interface_ptr->setStartStateToCurrentState();
 
-        trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[i*(N+1) + j + 1]);
+        trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses[i*(N+1) + j + 1]);
 
 
         // The result may look something like this:
@@ -3852,7 +3832,7 @@ public:
     move_group_interface_ptr->setStartStateToCurrentState();
 
 
-    trajecto_bari_to_out(collision_object_baris, scan_pose, vec_grasping_poses, ID_grasp, final_poses[(M-1)*(N+1) + N + 1]);
+    trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses[(M-1)*(N+1) + N + 1]);
 
 
     // The result may look something like this:
