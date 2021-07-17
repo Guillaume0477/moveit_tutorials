@@ -81,6 +81,7 @@ public:
   double Global_time_traj = 0;
   double Global_nb_step_traj = 0;
   double Global_move_tool = 0;
+  double Global_angle_move_tool = 0;
   double NB_fail = 0;
   double NUM_TRAJ = 0;
 
@@ -259,7 +260,8 @@ public:
 
     // TODO CHANGE
     //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
-    std::string modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
+    //std::string modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
+    std::string modelpath = "package://geometric_shapes/test/resources/barillet_convex.obj";
     shape_msgs::Mesh mesh_bary = load_mesh(modelpath);
 
 
@@ -690,6 +692,8 @@ public:
       jc1.tolerance_below = -below_zero[i];//3.0;
       jc1.weight = 1.0; 
 
+      std::cout << "joint_name_constrain : " << "joint_" + std::to_string(i+1) << "[" << -below_zero[i] << ", " << above_zero[i] << "]" << std::endl;
+
       test_constraints.joint_constraints.push_back(jc1);
 
     }
@@ -733,7 +737,9 @@ public:
       // - SemiPersistentLazyPRMstar
       // - SemiPersistentLazyPRM
 
-
+    std::cout << "Nb_attempt : " << Nb_attempt << std::endl;
+    std::cout << "time_limit : " << time_limit << std::endl;
+    std::cout << "planner_id : " << planner_id << std::endl;
 
 
     move_group_interface_ptr->setPlannerId(planner_id);
@@ -747,7 +753,7 @@ public:
       << it->second   // string's value 
       << std::endl;
     }
-    std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
+    //std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
     //parametre["type"] = "geometric::LazyPRM";
     //std::cout << "parametre[type] : "<< parametre["type"] << std::endl;
 
@@ -865,17 +871,16 @@ public:
     //   std::cout << "angle joint i = " << i << " : " << joint_group_positions[i]*180/3.14159265 << std::endl;
     // }
     // //std::cout << "test std::cout" << trajecto_state.getWayPoint(0).getVariablePositions << std::endl;  //trajecto_state.getWayPointCount()
-    std::cout << "test std::cout" << trajecto_state.getWayPoint(1) << std::endl;  //trajecto_state.getWayPointCount()
-
-    std::cout << "Mine:" << std::endl;
-    std::cout << "Mine:" << std::endl;
-    std::cout << "Mine:" << std::endl;
+    //std::cout << "test std::cout" << trajecto_state.getWayPoint(1) << std::endl;  //trajecto_state.getWayPointCount()
 
     //std::cout << "Link poses:" << std::endl;
+
+
 
     EigenSTL::vector_Vector3d path;
 
     double local_move_tool = 0;
+    double local_angle_move_tool = 0;
   
     for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
     {
@@ -896,8 +901,22 @@ public:
 
       //double dist = distance((double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z(),(double) transform.translation().x(),(double) transform.translation().y(),(double) transform.translation().z()); 
       double dist = distance((double) transform0.translation().x(),(double) transform0.translation().y(),(double) transform0.translation().z(),(double) transform1.translation().x(),(double) transform1.translation().y(),(double) transform1.translation().z()); 
+      
+      std::vector<double> Joint_trajecto;
+      trajecto_state.getWayPoint(i-1).copyJointGroupPositions(joint_model_group_ptr, Joint_trajecto);
+      std::vector<double> Joint_trajecto2;
+      trajecto_state.getWayPoint(i).copyJointGroupPositions(joint_model_group_ptr, Joint_trajecto2);
+
+      double dist6D = distance6D((double) Joint_trajecto[0]*180/M_PI,(double) Joint_trajecto[1]*180/M_PI,(double) Joint_trajecto[2]*180/M_PI,
+                                 (double) Joint_trajecto[3]*180/M_PI,(double) Joint_trajecto[4]*180/M_PI,(double) Joint_trajecto[5]*180/M_PI,
+                                 (double) Joint_trajecto2[0]*180/M_PI,(double) Joint_trajecto2[1]*180/M_PI,(double) Joint_trajecto2[2]*180/M_PI,
+                                 (double) Joint_trajecto2[3]*180/M_PI, (double) Joint_trajecto2[4]*180/M_PI, (double) Joint_trajecto2[5]*180/M_PI);
+
       Global_move_tool += dist;
+      Global_angle_move_tool += dist6D;
       local_move_tool += dist;
+      local_angle_move_tool += dist6D;
+
 
 
     }
@@ -906,6 +925,13 @@ public:
     std::cout<< "###########" << std::endl;
     std::cout<< "###########" << std::endl;
     std::cout<< "DIST TOOL FOR TRAJ " << NUM_TRAJ << " : " << local_move_tool << "m" <<std::endl;
+    std::cout<< "###########" << std::endl;
+    std::cout<< "###########" << std::endl;
+
+
+    std::cout<< "###########" << std::endl;
+    std::cout<< "###########" << std::endl;
+    std::cout<< "DIST ANGLE FOR TRAJ " << NUM_TRAJ << " : " << local_angle_move_tool << "m" <<std::endl;
     std::cout<< "###########" << std::endl;
     std::cout<< "###########" << std::endl;
 
@@ -1177,7 +1203,7 @@ public:
     std::cout << target_pose[4] <<std::endl;
     std::cout << target_pose[5] <<std::endl;
 
-    visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+    //visual_tools_ptr->prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
 
 
@@ -1948,13 +1974,13 @@ public:
       traj0 = trajecto_approch( vec_grasping_poses[0][ID_grasp]);
     }
 
-    std::cout<<"size traj"<<traj0.size()<<std::endl;
+    //std::cout<<"size traj"<<traj0.size()<<std::endl;
 
     traj1 = trajecto_bari_to_scan(scan_pose);
 
     traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
 
-    std::cout<<"size traj"<<traj0.size()<<std::endl;
+    //std::cout<<"size traj"<<traj0.size()<<std::endl;
 
     export_trajectory(traj0);
 
@@ -2222,8 +2248,8 @@ public:
 
 
     int Nb_attempt = 3;
-    double time_limit = 0.3;
-    std::string planner_id = "SemiPersistentLazyPRMstar";
+    double time_limit = 3.0;
+    std::string planner_id = "LazyPRMstar";
 
     setup_planner(Nb_attempt, time_limit, planner_id);
 
@@ -2759,6 +2785,7 @@ public:
     }
 
     std::string FilePath = "/home/guillaume/Téléchargements/somfyBarrel.txt";
+    std::cout << "grasping file loaded : " << FilePath << std::endl;
 
     std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses = load_grasping_pose(0.05, FilePath);
 
@@ -2783,10 +2810,39 @@ public:
 
     std::vector<std::vector<double>> traj0 = go_to_position(vec_joint);
 
-    int Nb_attempt = 3;
-    double time_limit = 0.3;
-    std::string planner_id = "SemiPersistentLazyPRMstar";
-    //std::string planner_id = "LazyPRMstar";
+
+    // - SBLkConfigDefault
+    // - ESTkConfigDefault
+    // - LBKPIECEkConfigDefault
+    // - BKPIECEkConfigDefault
+    // - KPIECEkConfigDefault
+    // - RRTkConfigDefault
+    // - RRTConnectkConfigDefault
+    // - RRTstarkConfigDefault
+    // - TRRTkConfigDefault
+    // - PRMkConfigDefault
+    // - PRMstarkConfigDefault
+    // - FMTkConfigDefault
+    // - BFMTkConfigDefault
+    // - PDSTkConfigDefault
+    // - STRIDEkConfigDefault
+    // - BiTRRTkConfigDefault
+    // - LBTRRTkConfigDefault
+    // - BiESTkConfigDefault
+    // - ProjESTkConfigDefault
+    // - LazyPRMkConfigDefault
+    // - LazyPRMstarkConfigDefault
+    // - SPARSkConfigDefault
+    // - SPARStwokConfigDefault
+    // - TrajOptDefault
+
+    //TODO TEST
+    int Nb_attempt = 1;
+    double time_limit = 2;
+    //std::string planner_id = "AnytimePathShortening";
+    std::string planner_id = "SBLkConfigDefault";
+
+  
 
     setup_planner(Nb_attempt, time_limit, planner_id);
 
@@ -3304,12 +3360,9 @@ Moveit_Engine::Moveit_Engine(int argc, char** argv, moveit::planning_interface::
   //Raw pointers are frequently used to refer to the planning group for improved performance.
   joint_model_group_ptr = move_group_interface_ptr->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
-
-  std::cout << "HI THERE 1" << std::endl;
 }
 Moveit_Engine::~Moveit_Engine()
 {
-  std::cout << "BY THERE" << std::endl;
 }
 
 const std::string Moveit_Engine::PLANNING_GROUP = "arm_group";
@@ -3317,44 +3370,33 @@ const std::string Moveit_Engine::PLANNING_GROUP = "arm_group";
 
 int main(int argc, char** argv)
 {
-
-  std::cout << "HELLLO 0" << std::endl;
   ros::init(argc, argv, "move_group_interface_tutorial");
-  std::cout << "HELLLO 1" << std::endl;
   ros::NodeHandle node_handle;
-  std::cout << "HELLLO 2" << std::endl;
+
   // ROS spinning must be running for the MoveGroupInterface to get information
   // about the robot's state. One way to do this is to start an AsyncSpinner
   // beforehand.
   ros::AsyncSpinner spinner(1);
-  std::cout << "HELLLO 3" << std::endl;
   spinner.start();
-  std::cout << "HELLLO 4" << std::endl;
   static const std::string PLANNING_GROUP = "arm_group";
 
-  std::cout << "HELLLO 44" << std::endl;
+
   //robot_model_loader::RobotModelLoader robot_model_loader("arm_group");
-  std::cout << "HELLLO 441" << std::endl;
   //const moveit::core::RobotModelPtr& kinematic_model = robot_model_loader.getModel();
-  std::cout << "HELLLO 442" << std::endl;
   //ROS_INFO("Model frame: %s", kinematic_model->getModelFrame().c_str());
-  std::cout << "HELLLO 443" << std::endl;
 
 
   // // The :planning_interface:`MoveGroupInterface` class can be easily
   // // setup using just the name of the planning group you would like to control and plan for.
   moveit::planning_interface::MoveGroupInterface move_group_interface = moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
-  std::cout << "HELLLO 5" << std::endl;
 
   // We will use the :planning_interface:`PlanningSceneInterface`
   // class to add and remove collision objects in our "virtual world" scene
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-  std::cout << "HELLLO 6" << std::endl;
 
   // The package MoveItVisualTools provides many capabilities for visualizing objects, robots,
   // and trajectories in RViz as well as debugging tools such as step-by-step introspection of a script.
   moveit_visual_tools::MoveItVisualTools visual_tools("base_link");
-  std::cout << "HELLLO 7" << std::endl;
 
   //std::thread first(run_ros, argc, argv);
   //std::cout << "thread launched" << std::endl;
@@ -3413,7 +3455,7 @@ int main(int argc, char** argv)
   visual_tools.deleteAllMarkers();
 
 
-  visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
+  //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
   // Remote control is an introspection tool that allows users to step through a high level script
   // via buttons and keyboard shortcuts in RViz
   visual_tools.loadRemoteControl();
@@ -3460,6 +3502,7 @@ int main(int argc, char** argv)
   std::cout<<"Global time to execute traj : "<<moveit_engine_test.Global_time_traj<<" s "<<std::endl;
   std::cout<<"Global nb of step in the traj : "<<moveit_engine_test.Global_nb_step_traj<<std::endl;
   std::cout<<"Global move of the tool : "<<moveit_engine_test.Global_move_tool<< " m"<<std::endl;
+  std::cout<<"Global angle move of the tool : "<<moveit_engine_test.Global_angle_move_tool<< " m"<<std::endl;
   std::cout<<"Nombre de fail : "<< moveit_engine_test.NB_fail<< std::endl;
   std::cout<< "###########" << std::endl;
   std::cout<< "###########" << std::endl;
