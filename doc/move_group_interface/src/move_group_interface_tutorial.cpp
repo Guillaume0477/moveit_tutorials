@@ -815,10 +815,10 @@ public:
     ocm.weight = 1.0;
 
 
-    std::vector<float> above = {0.0, 1.57, 2.53, 2.27, 2.39, 3.14};
-    std::vector<float> below = {-3.0, -0.7, -0.7, -2.27, -2, -3.15};
+    //std::vector<float> above = {0.0, 1.57, 2.53, 2.27, 2.39, 3.14};
+    //std::vector<float> below = {-3.0, -0.7, -0.7, -2.27, -2, -3.15};
 
-    set_joint_constraint(above, below);
+    //set_joint_constraint(above, below);
 
   }
 
@@ -2158,20 +2158,20 @@ public:
       {
           std::stringstream ss(ligne);
 
-          std::cout << ligne << std::endl;
+          //std::cout << ligne << std::endl;
           std::string tx, ty, tz, rx, ry, rz;
           std::getline(ss,tx,',');    
-          std::cout<<"\""<<tx<<"\""<<std::endl;
+          //std::cout<<"\""<<tx<<"\""<<std::endl;
           std::getline(ss,ty,','); 
-          std::cout<<", \""<<ty<<"\""<<std::endl;
+          //std::cout<<", \""<<ty<<"\""<<std::endl;
           std::getline(ss,tz,','); 
-          std::cout<<", \""<<tz<<"\""<<std::endl;
+          //std::cout<<", \""<<tz<<"\""<<std::endl;
           std::getline(ss,rx,',');    
-          std::cout<<"\""<<rx<<"\""<<std::endl;
+          //std::cout<<"\""<<rx<<"\""<<std::endl;
           std::getline(ss,ry,','); 
-          std::cout<<", \""<<ry<<"\""<<std::endl;
+          //std::cout<<", \""<<ry<<"\""<<std::endl;
           std::getline(ss,rz,','); 
-          std::cout<<", \""<<rz<<"\""<<std::endl;
+          //std::cout<<", \""<<rz<<"\""<<std::endl;
           Eigen::Isometry3d tf_tcp_in_bari;
           tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
           geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, distance_approch);
@@ -2732,7 +2732,7 @@ public:
   }
 
 
-  void full_scenario_grasp( int M, int N){
+  void full_scenario_grasp( int M, int N, std::string planni_id){
 
     Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
     text_pose.translation().z() = 1.3;
@@ -2840,7 +2840,7 @@ public:
     int Nb_attempt = 1;
     double time_limit = 2;
     //std::string planner_id = "AnytimePathShortening";
-    std::string planner_id = "SBLkConfigDefault";
+    std::string planner_id = planni_id;
 
   
 
@@ -3370,6 +3370,8 @@ const std::string Moveit_Engine::PLANNING_GROUP = "arm_group";
 
 int main(int argc, char** argv)
 {
+
+  //std::cout << argv[0] << argv[1] << argv[2] << argv[3] << argv[4] << std::endl;
   ros::init(argc, argv, "move_group_interface_tutorial");
   ros::NodeHandle node_handle;
 
@@ -3479,7 +3481,8 @@ int main(int argc, char** argv)
   //moveit_engine_test.full_scenario( collision_object_baris, scan_pose, final_poses, bari_poses, grasping_poses, M, N);
 
   //moveit_engine_test.full_scenario_grasp(collision_object_baris, scan_pose, final_poses, bari_poses, vec_grasping_poses, M, N);
-  moveit_engine_test.full_scenario_grasp( M, N);
+  std::string plan_id = argv[1];
+  moveit_engine_test.full_scenario_grasp( M, N, plan_id);
 
   //moveit_engine_test.full_scenario_grasp_robot(M, N);
 
