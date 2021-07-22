@@ -21,6 +21,15 @@ typedef struct {
 } arr1Df;
 typedef arr1Df** arr1Df_LV;
 
+// Array1D of double LabVIEW
+typedef struct
+{
+  uint32_t dimSize;
+  double elt[1];
+} arr1Dd;
+typedef arr1Dd** arr1Dd_LV;
+
+
 // Array2D of double LabVIEW
 typedef struct {
     uint32_t dimSize[2];
