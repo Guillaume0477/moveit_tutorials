@@ -126,7 +126,7 @@ public:
 
   void fill_vector_cin_angle(std::vector<double>& boxInsideSizeM, std::string info);
 
-  geometry_msgs::PoseStamped get_pose(std::string info);
+  geometry_msgs::PoseStamped get_pose(std::vector<double> vector_quentin, std::string base);
 
   void load_bari_in_scene_simulation(std::vector<moveit_msgs::CollisionObject>& collision_object_baris);
 
@@ -213,6 +213,8 @@ public:
   void full_scenario_grasp(int M, int N, std::string planni_id);
 
   geometry_msgs::Quaternion relative_quat_rotation(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2);
+
+
 
  private:
   	//*************************************

@@ -38,6 +38,9 @@ extern "C" __declspec(dllexport) int __cdecl do_simulation(const int N, const in
 
 extern "C" __declspec(dllexport) int __cdecl go_to_position_joint(arr1Dd_LV joints, arr2Dd_LV traj);
 
+extern "C" __declspec(dllexport) int __cdecl go_to_position_pose(Position Pose, Orientation Rota, LStrHandle repere,
+                                                                arr2Dd_LV traj);
+
 extern "C" __declspec(dllexport) int __cdecl GetStatistics(double* time_find_planning, double* time_traj,
                                                            double* nb_step_traj, double* distance_traveled_tool,
                                                            double* angle_traveled_tool, double* nb_fail);

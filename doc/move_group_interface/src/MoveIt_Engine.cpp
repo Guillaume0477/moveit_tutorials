@@ -350,15 +350,13 @@ while (line == ""){
 }
 
 
-geometry_msgs::PoseStamped MoveIt_Engine::get_pose(std::string info)
+geometry_msgs::PoseStamped MoveIt_Engine::get_pose(std::vector<double> vector_quentin, std::string base)
 {
-std::vector<double> vector_quentin;// = {0.269572 0.184798 0.177178};
 
-fill_vector_cin(vector_quentin, info);
 
 geometry_msgs::PoseStamped pose;
 
-pose.header.frame_id = "base";
+pose.header.frame_id = base;
 tf2::Quaternion quat;
 std::cout << "vector_quentin" << vector_quentin[3] << " " << vector_quentin[4] << " " << vector_quentin[5] << std::endl;
 quat = set_quentin(vector_quentin[3],vector_quentin[4],vector_quentin[5]);
@@ -1219,6 +1217,7 @@ text_pose.translation().z() = 1.3;
 ros::NodeHandle nh;
 
 
+move_group_interface_ptr->setStartStateToCurrentState();
 
 // Fetch the current planning scene state once
 auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
@@ -1426,7 +1425,7 @@ for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
 EigenSTL::vector_Vector3d path = MoveIt_Engine::evaluate_plan(my_plan, local_time_find_plan, time_traj, trajecto_state);
 
 const double radius = 0.005;
-visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
+//visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
 visual_tools_ptr->trigger();
 //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -1449,6 +1448,7 @@ text_pose.translation().z() = 1.3;
 ros::NodeHandle nh;
 
 
+move_group_interface_ptr->setStartStateToCurrentState();
 
 // Fetch the current planning scene state once
 auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description");
@@ -1646,7 +1646,7 @@ for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
 EigenSTL::vector_Vector3d path = evaluate_plan(my_plan, local_time_find_plan, time_traj, trajecto_state);
 
 const double radius = 0.005;
-visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
+//visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
 visual_tools_ptr->trigger();
 //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -1670,6 +1670,7 @@ text_pose.translation().z() = 1.3;
 
 ros::NodeHandle nh;
 
+move_group_interface_ptr->setStartStateToCurrentState();
 
 
 // Fetch the current planning scene state once
@@ -1878,7 +1879,7 @@ for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
 EigenSTL::vector_Vector3d path = evaluate_plan(my_plan, local_time_find_plan, time_traj, trajecto_state);
 
 const double radius = 0.005;
-visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
+//visual_tools_ptr->publishPath(path, rviz_visual_tools::GREEN, radius);
 visual_tools_ptr->trigger();
 //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -2414,15 +2415,17 @@ fill_vector_cin_angle(vec_joint, "please give the J_INIT pose in 1 line : j1 j2 
 
 std::vector<std::vector<double>> traj1 = go_to_position(vec_joint);
 
+std::vector<double> vector0;  // = {0.269572 0.184798 0.177178};
 
+fill_vector_cin(vector0, "please give the SCAN pose in 1 line : tx ty tz rx ry rz");
 
-scan_pose = get_pose("please give the SCAN pose in 1 line : tx ty tz rx ry rz"); 
+scan_pose = get_pose(vector0, "base"); 
 
 move_group_interface_ptr->setStartStateToCurrentState();
 
 
 int Nb_attempt = 3;
-double time_limit = 3.0;
+double time_limit = 5.0;
 std::string planner_id = "LazyPRMstar";
 
 setup_planner(Nb_attempt, time_limit, planner_id);
@@ -2487,7 +2490,11 @@ shape_msgs::Mesh mesh_bary = load_mesh(modelpath);
 
 
 // Define a pose for the box (specified relative to frame_id)
-geometry_msgs::PoseStamped pose = get_pose("please give the bari pose in 1 line : tx ty tz rx ry rz");
+std::vector<double> vector;  // = {0.269572 0.184798 0.177178};
+
+fill_vector_cin(vector, "please give the bari pose in 1 line : tx ty tz rx ry rz");
+geometry_msgs::PoseStamped pose = get_pose(vector, "base");
+
 std::string str_id_obj = "bari0";
 
 load_obj_in_scene( collision_object_baris, mesh_bary, pose, str_id_obj);
@@ -2518,7 +2525,7 @@ for (int k=0; k<vec_grasping_poses[0].size(); k++){
 
 
 
-move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
+move_group_interface_ptr->setStartStateToCurrentState();
 
 
 trajecto_scan_to_bari( vec_grasping_poses, ID_grasp);
@@ -2527,15 +2534,17 @@ move_group_interface_ptr->attachObject("bari0", "link_tool");
 
 move_group_interface_ptr->setStartStateToCurrentState();
 
-
-scan_pose = get_pose("please give the SCAN pose in 1 line : tx ty tz rx ry rz");
+std::vector<double> vector2; 
+fill_vector_cin(vector2, "please give the SCAN pose in 1 line : tx ty tz rx ry rz");
+scan_pose = get_pose(vector2, "base");
 
 trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
 
 move_group_interface_ptr->setStartStateToCurrentState();
 
-
-final_poses = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
+std::vector<double> vector3;
+fill_vector_cin(vector3, "please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
+final_poses = get_pose(vector3, "base");
 
 trajecto_scan_to_out(final_poses);
 
@@ -2563,7 +2572,10 @@ move_group_interface_ptr->detachObject("bari0");
         //modelpath = "package://geometric_shapes/test/resources/5067976_barillet_005.obj";
         //std::string modelpath = "package://geometric_shapes/test/resources/rc2.obj";
         // Define a pose for the box (specified relative to frame_id)
-        pose = get_pose("please give the bari pose in 1 line : tx ty tz rx ry rz");
+        std::vector<double> vector4;
+        fill_vector_cin(vector4, "please give the bari pose in 1 line : tx ty tz rx ry rz");
+        pose = get_pose(vector4, "base");
+
         str_id_obj = "bari0";
 
         load_obj_in_scene( collision_object_baris, mesh_bary, pose, str_id_obj);
@@ -2628,7 +2640,10 @@ move_group_interface_ptr->detachObject("bari0");
 
         move_group_interface_ptr->setStartStateToCurrentState();
 
-        scan_pose = get_pose("please give the SCAN pose in 1 line : tx ty tz rx ry rz");
+        std::vector<double> vector5;
+        fill_vector_cin(vector5, "please give the SCAN pose in 1 line : tx ty tz rx ry rz");
+        scan_pose = get_pose(vector5, "base");
+
 
         trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
 
@@ -2637,8 +2652,9 @@ move_group_interface_ptr->detachObject("bari0");
         // Replan, but now with the object in hand.
         move_group_interface_ptr->setStartStateToCurrentState();
 
-        final_poses = get_pose("please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
-
+        std::vector<double> vector6;
+        fill_vector_cin(vector6, "please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
+        final_poses = get_pose(vector6, "base");
 
         trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses);
 
@@ -3353,7 +3369,7 @@ int main(int argc, char** argv)
   std::cout << "###########" << std::endl;
 
   int M = 2;
-  int N = 2; //(+1 bari detecté par scan)
+  int N = 8; //(+1 bari detecté par scan)
 
 
   //full_scenario_without_attach( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
