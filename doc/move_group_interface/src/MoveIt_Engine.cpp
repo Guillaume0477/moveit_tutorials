@@ -1608,7 +1608,6 @@ for (int i=0; i < 10 ;i++){
     std::cout << "TRY AGAIN : " << i << std::endl;
     NB_fail++;
     }
-
 }
 
 if (!success) {
@@ -1843,7 +1842,6 @@ for (int i=0; i < 10 ;i++){
     std::cout << "TRY AGAIN : " << i << std::endl;
     NB_fail++;
     }
-
 }
 
 if (!success) {
@@ -1902,14 +1900,52 @@ if (myfile.is_open())
 else std::cout << "Unable to open file";
 }
 
-std::vector<std::vector<double>> MoveIt_Engine::trajecto_approch(geometry_msgs::PoseStamped& pose_goal)
+std::vector<std::vector<double>> MoveIt_Engine::traj_to_vector(moveit_msgs::RobotTrajectory trajectory)
 {
 
-std::cout << "trajecto_approch(geometry_msgs::PoseStamped& pose_goal) : " << "vec_grasping_poses[0][k].header.frame_id" << pose_goal.header.frame_id << std::endl;
-
-geometry_msgs::Pose start_pose2;
+  approch_traj_msg = trajectory;
 
 
+  robot_trajectory::RobotTrajectory trajecto_state(move_group_interface_ptr->getCurrentState()->getRobotModel(),
+                                                   move_group_interface_ptr->getName());
+  trajecto_state.setRobotTrajectoryMsg(*move_group_interface_ptr->getCurrentState(), trajectory);
+
+  robot_trajectory::RobotTrajectory trajecto_state_inv(move_group_interface_ptr->getCurrentState()->getRobotModel(),
+                                                   move_group_interface_ptr->getName());
+  trajecto_state_inv.setRobotTrajectoryMsg(*move_group_interface_ptr->getCurrentState(), trajectory);
+  trajecto_state_inv.reverse();
+
+  trajecto_state_inv.getRobotTrajectoryMsg(inv_approch_msg_traj);
+
+  std::vector<std::vector<double>> trajecto_waypoint_joint;
+  for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
+  {
+    std::vector<double> waypoint_joint;
+    trajecto_state.getWayPointPtr(i)->copyJointGroupPositions(joint_model_group_ptr, waypoint_joint);
+    trajecto_waypoint_joint.push_back(waypoint_joint);
+  }
+  return trajecto_waypoint_joint;
+}
+
+
+
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_approch(geometry_msgs::PoseStamped& pose_goal/*, bool do_executable*/)
+{
+  std::cout << "##################################################################" << std::endl;
+  std::cout << "##################################################################" << std::endl;
+  std::cout <<  "##################################################################" << std::endl;
+std::cout << "trajecto_approch(geometry_msgs::PoseStamped& pose_goal) : " << " vec_grasping_poses[0][k].header.frame_id " << pose_goal.header.frame_id << std::endl;
+  std::cout << pose_goal << std::endl;
+  std::cout << "##################################################################" << std::endl;
+  std::cout << "##################################################################" << std::endl;
+  std::cout << "##################################################################" << std::endl;
+  std::cout << "##################################################################" << std::endl;
+  std::cout << "##################################################################" << std::endl;
+  geometry_msgs::Pose start_pose2;
+
+  //pose_goal.pose.position.x = -0.0901568;
+  //pose_goal.pose.position.y = -0.375656;
+  //pose_goal.pose.position.z = -0.001;
 
 //double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory, false);
 //ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
@@ -1948,27 +1984,28 @@ double fraction = move_group_interface_ptr->computeCartesianPath(vecULT, eef_ste
 ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
 
 
+  std::cout << "##################################################################" << std::endl;
+std::cout << "##################################################################" << std::endl;
+std::cout <<"TRAJECTO " << trajectory << std::endl;
+std::cout << "##################################################################" << std::endl;
+std::cout << "##################################################################" << std::endl;
+
 
 visual_tools_ptr->trigger(); // to apply changes
 //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
-
-move_group_interface_ptr->execute(trajectory);
-
-visual_tools_ptr->trigger(); // to apply changes
-//visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
-
-robot_trajectory::RobotTrajectory trajecto_state(move_group_interface_ptr->getCurrentState()->getRobotModel(), move_group_interface_ptr->getName());
-
-trajecto_state.setRobotTrajectoryMsg(*move_group_interface_ptr->getCurrentState(), trajectory);
-
-std::vector<std::vector<double>> trajecto_waypoint_joint;
-for (std::size_t i = 1; i < trajecto_state.getWayPointCount(); ++i)
+if (do_execution_approch)
 {
-    std::vector<double> waypoint_joint;
-    trajecto_state.getWayPointPtr(i)->copyJointGroupPositions(joint_model_group_ptr, waypoint_joint);
-    trajecto_waypoint_joint.push_back(waypoint_joint);
+    move_group_interface_ptr->execute(trajectory);
 }
 
+
+
+visual_tools_ptr->trigger(); // to apply changes
+//visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
+
+
+std::vector<std::vector<double>> trajecto_waypoint_joint;
+trajecto_waypoint_joint =  traj_to_vector(trajectory);
 
 return trajecto_waypoint_joint;
 
@@ -2010,8 +2047,8 @@ std::vector<std::vector<double>> traj0 = go_to_position(vec_grasping_poses[0], I
 
 std::vector<std::vector<double>> traj1;
 if (ID_grasp != -1){
+    traj1 = trajecto_approch( vec_grasping_poses[1][ID_grasp]); 
     approch_traj = traj1;
-    traj1 = trajecto_approch( vec_grasping_poses[1][ID_grasp]);
 }
 traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
 
@@ -2138,7 +2175,13 @@ std::vector<std::vector<double>> traj0;
 std::vector<std::vector<double>> traj1;
 
 if (ID_grasp != -1){
-    traj0 = trajecto_approch( vec_grasping_poses[0][ID_grasp]);
+    traj0 = approch_traj;
+    std::reverse(traj0.begin(), traj0.end());
+    if (do_execution_approch) {
+        move_group_interface_ptr->execute(inv_approch_msg_traj);
+    }
+   
+    //traj0 = trajecto_approch( vec_grasping_poses[0][ID_grasp]);
 }
 
 //std::cout<<"size traj"<<traj0.size()<<std::endl;
@@ -2265,7 +2308,12 @@ void MoveIt_Engine::trajecto_bari_to_out(int ID_grasp, geometry_msgs::PoseStampe
 {
 
 if (ID_grasp != -1){
-    trajecto_approch( vec_grasping_poses[0][ID_grasp]);
+    //trajecto_approch( vec_grasping_poses[0][ID_grasp]);
+    std::reverse(approch_traj.begin(), approch_traj.end());
+    if (do_execution_approch)
+    {
+      move_group_interface_ptr->execute(inv_approch_msg_traj);
+    }
 }
 move_group_interface_ptr->setStartStateToCurrentState();
 
@@ -2344,11 +2392,50 @@ if(fichier)
         std::getline(ss,rz,','); 
         std::cout<<", \""<<rz<<"\""<<std::endl;
         Eigen::Isometry3d tf_tcp_in_bari;
-        tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
+
+        //std::cout << "validation " << std::stod(std::string("0.006")) << std::endl;
+        if (std::stod(std::string("0.006")) == 0.006) {
+          std::replace(tx.begin(), tx.end(), ',', '.');
+          std::replace(ty.begin(), ty.end(), ',', '.');
+          std::replace(tz.begin(), tz.end(), ',', '.');
+          std::replace(rx.begin(), rx.end(), ',', '.');
+          std::replace(ry.begin(), ry.end(), ',', '.');
+          std::replace(rz.begin(), rz.end(), ',', '.');
+        }
+        else
+        {
+          std::replace(tx.begin(), tx.end(), '.', ',');
+          std::replace(ty.begin(), ty.end(), '.', ',');
+          std::replace(tz.begin(), tz.end(), '.', ',');
+          std::replace(rx.begin(), rx.end(), '.', ',');
+          std::replace(ry.begin(), ry.end(), '.', ',');
+          std::replace(rz.begin(), rz.end(), '.', ',');
+
+        }
+
+
+        //std::cout << "Ligne file str " << tx << " " << ty << " " << tz << " " << rx << " " << ry << " " << rz
+        //          << std::endl;
+        //std::cout << "Ligne file float " << std::stof(tx) << " " << std::stof(ty) << " " << std::stof(tz) << " "
+        //          << std::stof(rx) << " " << std::stof(ry) << " " << std::stof(rz) << std::endl;
+        //std::cout << "Ligne file double " << std::stod(tx) << " " << std::stod(ty) << " " << std::stod(tz) << " "
+        //          << std::stof(rx) << " " << std::stod(ry) << " " << std::stod(rz) << std::endl;
+        //std::string test ="0.006";
+        //std::string test2 = "0,006";
+
+        //std::cout << "Test" << 0.0006 << " " << std::stod(std::string("0.006")) << " "
+        //          << std::stod(std::string("0,006")) << " " << ::atof(test.c_str()) << " " << ::atof(test2.c_str())
+        //          << std::endl;
+
+
+        tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx),
+                                                std::stof(ry), std::stof(rz));
         geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, distance_approch);
         grasping_poses.push_back(tf_transformed);
-        tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, 0.0);
-        grasping_poses_true.push_back(tf_transformed);
+        std::cout << "tf_transformed " << tf_transformed << std::endl;
+        geometry_msgs::PoseStamped tf_transformed2 = link6_in_bari_grasp(tf_tcp_in_bari, 0.0);
+        grasping_poses_true.push_back(tf_transformed2);
+        std::cout << "tf_transformed2 " << tf_transformed2 << std::endl;
 
     }
 }

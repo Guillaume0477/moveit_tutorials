@@ -60,6 +60,7 @@
 #include <fstream>
 #include <sstream>
 
+
 // TF2
 
 #include <tf2_eigen/tf2_eigen.h>
@@ -179,6 +180,8 @@ public:
 
   void export_trajectory(std::vector<std::vector<double>> traj0);
 
+  std::vector<std::vector<double>> MoveIt_Engine::traj_to_vector(moveit_msgs::RobotTrajectory trajectory);
+
   std::vector<std::vector<double>> trajecto_approch(geometry_msgs::PoseStamped& pose_goal);
 
   void trajecto_scan_to_bari(geometry_msgs::PoseStamped bari_pose);
@@ -216,6 +219,10 @@ public:
   std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
 
   std::vector<std::vector<double>> approch_traj;
+  moveit_msgs::RobotTrajectory approch_traj_msg;
+  moveit_msgs::RobotTrajectory inv_approch_msg_traj;
+
+  bool do_execution_approch = 1;
 
  private:
   	//*************************************
