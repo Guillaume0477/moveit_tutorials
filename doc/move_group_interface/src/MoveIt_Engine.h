@@ -183,7 +183,7 @@ public:
 
   void trajecto_scan_to_bari(geometry_msgs::PoseStamped bari_pose);
 
-  void trajecto_scan_to_bari(std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses, int ID_grasp);
+  void trajecto_scan_to_bari(int ID_grasp);
 
   void trajecto_initial_to_scan_and_bari(std::vector<moveit_msgs::CollisionObject>& collision_object_baris,
                                          geometry_msgs::PoseStamped scan_pose,
@@ -194,19 +194,18 @@ public:
   std::vector<std::vector<double>> trajecto_scan_to_out(geometry_msgs::PoseStamped& final_pose);
 
   std::vector<std::vector<double>>
-  trajecto_bari_to_scan(geometry_msgs::PoseStamped scan_pose,
-                        std::vector<std::vector<geometry_msgs::PoseStamped>>& vec_grasping_poses, int ID_grasp);
+  trajecto_bari_to_scan(geometry_msgs::PoseStamped scan_pose, int ID_grasp);
 
   void trajecto_out_to_bari(geometry_msgs::PoseStamped& bari_pose);
 
-  void trajecto_out_to_bari(std::vector<std::vector<geometry_msgs::PoseStamped>>& vec_grasping_poses, int ID_grasp);
+  void trajecto_out_to_bari(int ID_grasp);
 
-  void trajecto_bari_to_out(std::vector<std::vector<geometry_msgs::PoseStamped>>& vec_grasping_poses, int ID_grasp,
+  void trajecto_bari_to_out(int ID_grasp,
                             geometry_msgs::PoseStamped& final_pose);
 
   void trajecto_bari_to_out(geometry_msgs::PoseStamped& final_pose);
 
-  std::vector<std::vector<geometry_msgs::PoseStamped>> load_grasping_pose(float distance_approch, std::string FilePath);
+  int load_grasping_pose(float distance_approch, std::string FilePath);
 
   void full_scenario_grasp_robot(int M, int N);
 
@@ -214,7 +213,9 @@ public:
 
   geometry_msgs::Quaternion relative_quat_rotation(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2);
 
+  std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
 
+  std::vector<std::vector<double>> approch_traj;
 
  private:
   	//*************************************

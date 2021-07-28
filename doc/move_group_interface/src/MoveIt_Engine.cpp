@@ -1905,7 +1905,7 @@ else std::cout << "Unable to open file";
 std::vector<std::vector<double>> MoveIt_Engine::trajecto_approch(geometry_msgs::PoseStamped& pose_goal)
 {
 
-    
+std::cout << "trajecto_approch(geometry_msgs::PoseStamped& pose_goal) : " << "vec_grasping_poses[0][k].header.frame_id" << pose_goal.header.frame_id << std::endl;
 
 geometry_msgs::Pose start_pose2;
 
@@ -1994,8 +1994,7 @@ std::vector<std::vector<double>> traj6 = go_to_position( bari_pose);
 }
 
 
-void MoveIt_Engine::trajecto_scan_to_bari(std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses,
-                                        int ID_grasp)
+void MoveIt_Engine::trajecto_scan_to_bari(int ID_grasp)
 {
 
 Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2011,6 +2010,7 @@ std::vector<std::vector<double>> traj0 = go_to_position(vec_grasping_poses[0], I
 
 std::vector<std::vector<double>> traj1;
 if (ID_grasp != -1){
+    approch_traj = traj1;
     traj1 = trajecto_approch( vec_grasping_poses[1][ID_grasp]);
 }
 traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_iterator(traj1.end()));
@@ -2132,7 +2132,7 @@ return traj6;
 
 
 
-std::vector<std::vector<double>> MoveIt_Engine::trajecto_bari_to_scan( geometry_msgs::PoseStamped scan_pose, std::vector<std::vector<geometry_msgs::PoseStamped>> &vec_grasping_poses, int ID_grasp){
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_bari_to_scan( geometry_msgs::PoseStamped scan_pose, int ID_grasp){
 
 std::vector<std::vector<double>> traj0;
 std::vector<std::vector<double>> traj1;
@@ -2174,8 +2174,7 @@ std::vector<std::vector<double>> traj5 = go_to_position(bari_pose);
 
 }
 
-void MoveIt_Engine::trajecto_out_to_bari(std::vector<std::vector<geometry_msgs::PoseStamped>>& vec_grasping_poses,
-                                        int ID_grasp)
+void MoveIt_Engine::trajecto_out_to_bari(int ID_grasp)
 {
 
 Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2191,6 +2190,7 @@ std::vector<std::vector<double>> traj5 = go_to_position(vec_grasping_poses[0], I
 
 if (ID_grasp != -1){
     std::vector<std::vector<double>> traj6 = trajecto_approch( vec_grasping_poses[1][ID_grasp]);
+    approch_traj = traj6;
     traj5.insert(traj5.end(),std::make_move_iterator(traj6.begin()),std::make_move_iterator(traj6.end()));
 
     export_trajectory(traj5);
@@ -2261,8 +2261,7 @@ if (ID_grasp != -1){
 
 
 
-void MoveIt_Engine::trajecto_bari_to_out(std::vector<std::vector<geometry_msgs::PoseStamped>>& vec_grasping_poses,
-                                        int ID_grasp, geometry_msgs::PoseStamped& final_pose)
+void MoveIt_Engine::trajecto_bari_to_out(int ID_grasp, geometry_msgs::PoseStamped& final_pose)
 {
 
 if (ID_grasp != -1){
@@ -2298,12 +2297,9 @@ std::vector<std::vector<double>> traj6 = go_to_position(final_pose);
 
 }
 
-std::vector<std::vector<geometry_msgs::PoseStamped>> MoveIt_Engine::load_grasping_pose(float distance_approch,
-                                                                                        std::string FilePath)
+int MoveIt_Engine::load_grasping_pose(float distance_approch,std::string FilePath)
 {
 
-
-std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses;
 std::vector<geometry_msgs::PoseStamped> grasping_poses;
 std::vector<geometry_msgs::PoseStamped> grasping_poses_true;
 
@@ -2336,17 +2332,17 @@ if(fichier)
         //std::cout << ligne << std::endl;
         std::string tx, ty, tz, rx, ry, rz;
         std::getline(ss,tx,',');    
-        //std::cout<<"\""<<tx<<"\""<<std::endl;
+        std::cout<<"\""<<tx<<"\""<<std::endl;
         std::getline(ss,ty,','); 
-        //std::cout<<", \""<<ty<<"\""<<std::endl;
+        std::cout<<", \""<<ty<<"\""<<std::endl;
         std::getline(ss,tz,','); 
-        //std::cout<<", \""<<tz<<"\""<<std::endl;
+        std::cout<<", \""<<tz<<"\""<<std::endl;
         std::getline(ss,rx,',');    
-        //std::cout<<"\""<<rx<<"\""<<std::endl;
+        std::cout<<"\""<<rx<<"\""<<std::endl;
         std::getline(ss,ry,','); 
-        //std::cout<<", \""<<ry<<"\""<<std::endl;
+        std::cout<<", \""<<ry<<"\""<<std::endl;
         std::getline(ss,rz,','); 
-        //std::cout<<", \""<<rz<<"\""<<std::endl;
+        std::cout<<", \""<<rz<<"\""<<std::endl;
         Eigen::Isometry3d tf_tcp_in_bari;
         tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx), std::stof(ry), std::stof(rz));
         geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, distance_approch);
@@ -2380,7 +2376,7 @@ std::cout<<"number of grasping poses : " << grasping_poses.size() << std::endl;
 vec_grasping_poses.push_back(grasping_poses);
 vec_grasping_poses.push_back(grasping_poses_true);
 
-return vec_grasping_poses;
+return 0;
 } 
 
 
@@ -2391,7 +2387,7 @@ Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
 text_pose.translation().z() = 1.3;
 
 std::string FilePath = "C:/moveit_ws/src/staubli_moveit_config/useful_files/somfyBarrel.txt";
-std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses = load_grasping_pose(0.05, FilePath);
+load_grasping_pose(0.05, FilePath);
 
 
 std::vector<moveit_msgs::CollisionObject> collision_object_baris;
@@ -2517,8 +2513,8 @@ else{
     }
 }
 for (int k=0; k<vec_grasping_poses[0].size(); k++){
-    vec_grasping_poses[0][k].header.frame_id = str_id_obj;
-    vec_grasping_poses[1][k].header.frame_id = str_id_obj;
+    std::cout << "vec_grasping_poses[0][k].header.frame_id" << vec_grasping_poses[0][k].header.frame_id << std::endl;
+    std::cout << "vec_grasping_poses[1][k].header.frame_id" << vec_grasping_poses[1][k].header.frame_id << std::endl;
 }
 
 
@@ -2528,7 +2524,7 @@ for (int k=0; k<vec_grasping_poses[0].size(); k++){
 move_group_interface_ptr->setStartStateToCurrentState();
 
 
-trajecto_scan_to_bari( vec_grasping_poses, ID_grasp);
+trajecto_scan_to_bari( ID_grasp);
 
 move_group_interface_ptr->attachObject("bari0", "link_tool");
 
@@ -2538,7 +2534,7 @@ std::vector<double> vector2;
 fill_vector_cin(vector2, "please give the SCAN pose in 1 line : tx ty tz rx ry rz");
 scan_pose = get_pose(vector2, "base");
 
-trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
+trajecto_bari_to_scan(scan_pose, ID_grasp);
 
 move_group_interface_ptr->setStartStateToCurrentState();
 
@@ -2596,7 +2592,7 @@ move_group_interface_ptr->detachObject("bari0");
             }
         }
 
-        trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
+        trajecto_out_to_bari( ID_grasp);
 
 
         // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
@@ -2645,7 +2641,7 @@ move_group_interface_ptr->detachObject("bari0");
         scan_pose = get_pose(vector5, "base");
 
 
-        trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
+        trajecto_bari_to_scan(scan_pose, ID_grasp);
 
 
 
@@ -2656,7 +2652,7 @@ move_group_interface_ptr->detachObject("bari0");
         fill_vector_cin(vector6, "please give the DEPOSE pose in 1 line : tx ty tz rx ry rz");
         final_poses = get_pose(vector6, "base");
 
-        trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses);
+        trajecto_bari_to_out( ID_grasp, final_poses);
 
 
         // The result may look something like this:
@@ -2758,7 +2754,7 @@ std::cout << "before grasping file loaded : " << std::endl;
 std::string FilePath = "C:/moveit_ws/src/staubli_moveit_config/useful_files/somfyBarrel.txt";
 std::cout << "grasping file loaded : " << FilePath << std::endl;
 
-std::vector<std::vector<geometry_msgs::PoseStamped>> vec_grasping_poses = load_grasping_pose(0.05, FilePath);
+load_grasping_pose(0.05, FilePath);
 
 std::vector<moveit_msgs::CollisionObject> collision_object_baris;
 
@@ -2846,11 +2842,17 @@ else{
     vec_grasping_poses[1][k].header.frame_id = "bari0";
     }
 }
+for (int k = 0; k < vec_grasping_poses[0].size(); k++)
+{
+  std::cout << "vec_grasping_poses[0][k].header.frame_id" << vec_grasping_poses[0][k].header.frame_id << std::endl;
+  std::cout << "vec_grasping_poses[1][k].header.frame_id" << vec_grasping_poses[1][k].header.frame_id << std::endl;
+}
+
 
 
 move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
 std::cout << "here we go7" << std::endl;
-trajecto_scan_to_bari( vec_grasping_poses, ID_grasp);
+trajecto_scan_to_bari( ID_grasp);
 std::cout << "here we go8" << std::endl;
 //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
 
@@ -2947,7 +2949,7 @@ for (int i = 0; i < M; i++){
 
 
 
-    trajecto_bari_to_scan(scan_pose, vec_grasping_poses, ID_grasp);
+    trajecto_bari_to_scan(scan_pose, ID_grasp);
 
 
     trajecto_scan_to_out(final_poses[i*(N+1)]);
@@ -3010,7 +3012,7 @@ for (int i = 0; i < M; i++){
         }
     }
 
-    trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
+    trajecto_out_to_bari( ID_grasp);
 
 
     // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
@@ -3061,7 +3063,7 @@ for (int i = 0; i < M; i++){
     // Replan, but now with the object in hand.
     move_group_interface_ptr->setStartStateToCurrentState();
 
-    trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses[i*(N+1) + j + 1]);
+    trajecto_bari_to_out( ID_grasp, final_poses[i*(N+1) + j + 1]);
 
 
     // The result may look something like this:
@@ -3119,7 +3121,7 @@ for (int i = 0; i < M; i++){
     }
 
 
-    trajecto_out_to_bari(vec_grasping_poses, ID_grasp);
+    trajecto_out_to_bari( ID_grasp);
 
     // Then, we "attach" the object to the robot. It uses the frame_id to determine which robot link it is attached to.
     // You could also use applyAttachedCollisionObject to attach an object to the robot directly.
@@ -3168,7 +3170,7 @@ for (int i = 0; i < M; i++){
 move_group_interface_ptr->setStartStateToCurrentState();
 
 
-trajecto_bari_to_out( vec_grasping_poses, ID_grasp, final_poses[(M-1)*(N+1) + N + 1]);
+trajecto_bari_to_out( ID_grasp, final_poses[(M-1)*(N+1) + N + 1]);
 
 
 // The result may look something like this:
