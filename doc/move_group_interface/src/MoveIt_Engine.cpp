@@ -154,77 +154,77 @@ void MoveIt_Engine::ReleaseInstance()
 //==============================================================================
 //   Errors and Logs handle
 //==============================================================================
-// int MoveIt_Engine::SetLoggingPath(const LStrHandle MoveIt_log)
-// {
-//   std::string s_MoveIt_log((char*)LStrBuf(*MoveIt_log), 0, LStrLen(*MoveIt_log));
+ int MoveIt_Engine::SetLoggingPath(const LStrHandle MoveIt_log)
+ {
+   std::string s_MoveIt_log((char*)LStrBuf(*MoveIt_log), 0, LStrLen(*MoveIt_log));
 
-//   if (!s_MoveIt_log.empty())
-//   {
-//     auto now = std::chrono::system_clock::now();
-//     auto in_time_t = std::chrono::system_clock::to_time_t(now);
+   if (!s_MoveIt_log.empty())
+   {
+     auto now = std::chrono::system_clock::now();
+     auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
-//     std::stringstream ss;
-//     ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d_%H-%M-%S");
-//     auto datetime_string = ss.str();
+     std::stringstream ss;
+     ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d_%H-%M-%S");
+     auto datetime_string = ss.str();
 
-//     try
-//     {
-//       if (MoveIt_Engine::out != nullptr)
-//       {
-//         if (MoveIt_Engine::out->is_open())
-//           MoveIt_Engine::out->close();
-//         delete MoveIt_Engine::out;
-//         MoveIt_Engine::out = nullptr;
-//       }
+     try
+     {
+       if (MoveIt_Engine::out != nullptr)
+       {
+         if (MoveIt_Engine::out->is_open())
+           MoveIt_Engine::out->close();
+         delete MoveIt_Engine::out;
+         MoveIt_Engine::out = nullptr;
+       }
 
-//       out = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_output.log", 'w');
+       out = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_output.log", 'w');
 
-//       if (out->is_open())
-//       {
-//         coutbuf = std::cout.rdbuf();    // save old buf
-//         std::cout.rdbuf(out->rdbuf());  // redirect std::cout to out.txt!
-//       }
-//       else
-//       {
-//         delete out;
-//         out = nullptr;
-//       }
+       if (out->is_open())
+       {
+         coutbuf = std::cout.rdbuf();    // save old buf
+         std::cout.rdbuf(out->rdbuf());  // redirect std::cout to out.txt!
+       }
+       else
+       {
+         delete out;
+         out = nullptr;
+       }
 
-//       if (err != nullptr)
-//       {
-//         if (err->is_open())
-//           err->close();
-//         delete err;
-//         err = nullptr;
-//       }
-//       err = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_errors.log", 'w');
+       if (err != nullptr)
+       {
+         if (err->is_open())
+           err->close();
+         delete err;
+         err = nullptr;
+       }
+       err = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_errors.log", 'w');
 
-//       if (err->is_open())
-//       {
-//         cerrbuf = std::cerr.rdbuf();    // save old buf
-//         std::cerr.rdbuf(err->rdbuf());  // redirect std::cerr to out.txt!
-//       }
-//       else
-//       {
-//         delete err;
-//         err = nullptr;
-//       }
-//       return NO_ERROR;
-//     }
-//     catch (const std::exception& e)
-//     {
-//       std::cerr << "Failed while redirecting logging streams: " << e.what() << std::endl;
-//       return NO_ERROR;
-//     }
-//     catch (...)
-//     {
-//       std::cerr << "Failed while redirecting logging streams. Unknown error!" << std::endl;
-//       return NO_ERROR;
-//     }
-//   }
-//   else
-//     return ERR_BAD_INPUT;
-// }
+       if (err->is_open())
+       {
+         cerrbuf = std::cerr.rdbuf();    // save old buf
+         std::cerr.rdbuf(err->rdbuf());  // redirect std::cerr to out.txt!
+       }
+       else
+       {
+         delete err;
+         err = nullptr;
+       }
+       return NO_ERROR;
+     }
+     catch (const std::exception& e)
+     {
+       std::cerr << "Failed while redirecting logging streams: " << e.what() << std::endl;
+       return NO_ERROR;
+     }
+     catch (...)
+     {
+       std::cerr << "Failed while redirecting logging streams. Unknown error!" << std::endl;
+       return NO_ERROR;
+     }
+   }
+   else
+     return ERR_BAD_INPUT;
+ }
 
 
 
@@ -3368,9 +3368,9 @@ const std::string MoveIt_Engine::PLANNING_GROUP = "arm_group";
 int main(int argc, char** argv)
 {
 
-  //std::system("start roslaunch staubli_moveit_config demo.launch rviz_tutorial:=true;");
+  std::system("start roslaunch staubli_moveit_config demo.launch rviz_tutorial:=true;");
 
-  //std::this_thread::sleep_for(std::chrono::seconds(30));
+  std::this_thread::sleep_for(std::chrono::seconds(30)); 
   //std::cout << argv[0] << argv[1] << argv[2] << argv[3] << argv[4] << std::endl;
   //char** argv2;
   int argc2 =0;

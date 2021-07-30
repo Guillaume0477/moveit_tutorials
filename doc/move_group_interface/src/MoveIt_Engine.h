@@ -67,8 +67,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 
-//#include <extcode.h>
-//#include "LabVIEW_Types.h"
+#include <extcode.h>
+#include "LabVIEW_Types.h"
 
 class MoveIt_Engine
 
@@ -83,7 +83,7 @@ public:
 
 
 
-  //int SetLoggingPath(const LStrHandle InnoViA_log);
+  int SetLoggingPath(const LStrHandle InnoViA_log);
   MoveIt_Engine();
   MoveIt_Engine(int argc, char** argv, moveit::planning_interface::MoveGroupInterface move_group_interface,
                 moveit::planning_interface::PlanningSceneInterface planning_scene_interface,
