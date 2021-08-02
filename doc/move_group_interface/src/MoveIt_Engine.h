@@ -155,7 +155,7 @@ public:
   tf2::Quaternion apply_rotation(tf2::Quaternion q1, tf2::Quaternion q_rot);
 
   void set_joint_constraint(std::vector<float> above_zero, std::vector<float> below_zero);
-  void set_box_constraint(std::vector<float> dimension, std::vector<float> position);
+
   // moveit::core::GroupStateValidityCallbackFn constraint_fn = boost::bind(&isIKStateValid, static_cast<const
   // planning_scene::PlanningSceneConstPtr&>(*ls).get(),
   //                           collision_checking_verbose_, only_check_self_collision_, visual_tools_, _1, _2, _3);
@@ -180,7 +180,7 @@ public:
 
   void export_trajectory(std::vector<std::vector<double>> traj0);
 
-  std::vector<std::vector<double>> traj_to_vector(moveit_msgs::RobotTrajectory trajectory);
+  std::vector<std::vector<double>> MoveIt_Engine::traj_to_vector(moveit_msgs::RobotTrajectory trajectory);
 
   std::vector<std::vector<double>> trajecto_approch(geometry_msgs::PoseStamped& pose_goal);
 
@@ -222,7 +222,7 @@ public:
   moveit_msgs::RobotTrajectory approch_traj_msg;
   moveit_msgs::RobotTrajectory inv_approch_msg_traj;
 
-  bool do_execution_approch = 0;
+  bool do_execution_approch = 1;
 
  private:
   	//*************************************

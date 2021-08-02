@@ -82,7 +82,7 @@ MoveIt_Engine::MoveIt_Engine(int argc, char** argv, moveit::planning_interface::
   joint_model_group_ptr = move_group_interface_ptr->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 }
 
-void MoveIt_Engine::CreateInstance()
+void MoveIt_Engine::CreateInstance() 
 {
   if (instance != nullptr)
   {
@@ -154,77 +154,77 @@ void MoveIt_Engine::ReleaseInstance()
 //==============================================================================
 //   Errors and Logs handle
 //==============================================================================
- int MoveIt_Engine::SetLoggingPath(const LStrHandle MoveIt_log)
- {
-   std::string s_MoveIt_log((char*)LStrBuf(*MoveIt_log), 0, LStrLen(*MoveIt_log));
+int MoveIt_Engine::SetLoggingPath(const LStrHandle MoveIt_log)
+{
+  std::string s_MoveIt_log((char*)LStrBuf(*MoveIt_log), 0, LStrLen(*MoveIt_log));
 
-   if (!s_MoveIt_log.empty())
-   {
-     auto now = std::chrono::system_clock::now();
-     auto in_time_t = std::chrono::system_clock::to_time_t(now);
+  if (!s_MoveIt_log.empty())
+  {
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
-     std::stringstream ss;
-     ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d_%H-%M-%S");
-     auto datetime_string = ss.str();
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d_%H-%M-%S");
+    auto datetime_string = ss.str();
 
-     try
-     {
-       if (MoveIt_Engine::out != nullptr)
-       {
-         if (MoveIt_Engine::out->is_open())
-           MoveIt_Engine::out->close();
-         delete MoveIt_Engine::out;
-         MoveIt_Engine::out = nullptr;
-       }
+    try
+    {
+      if (MoveIt_Engine::out != nullptr)
+      {
+        if (MoveIt_Engine::out->is_open())
+          MoveIt_Engine::out->close();
+        delete MoveIt_Engine::out;
+        MoveIt_Engine::out = nullptr;
+      }
 
-       out = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_output.log", 'w');
+      out = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_output.log", 'w');
 
-       if (out->is_open())
-       {
-         coutbuf = std::cout.rdbuf();    // save old buf
-         std::cout.rdbuf(out->rdbuf());  // redirect std::cout to out.txt!
-       }
-       else
-       {
-         delete out;
-         out = nullptr;
-       }
+      if (out->is_open())
+      {
+        coutbuf = std::cout.rdbuf();    // save old buf
+        std::cout.rdbuf(out->rdbuf());  // redirect std::cout to out.txt!
+      }
+      else
+      {
+        delete out;
+        out = nullptr;
+      }
 
-       if (err != nullptr)
-       {
-         if (err->is_open())
-           err->close();
-         delete err;
-         err = nullptr;
-       }
-       err = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_errors.log", 'w');
+      if (err != nullptr)
+      {
+        if (err->is_open())
+          err->close();
+        delete err;
+        err = nullptr;
+      }
+      err = new std::ofstream(s_MoveIt_log + "/" + datetime_string + "_MoveIt_errors.log", 'w');
 
-       if (err->is_open())
-       {
-         cerrbuf = std::cerr.rdbuf();    // save old buf
-         std::cerr.rdbuf(err->rdbuf());  // redirect std::cerr to out.txt!
-       }
-       else
-       {
-         delete err;
-         err = nullptr;
-       }
-       return NO_ERROR;
-     }
-     catch (const std::exception& e)
-     {
-       std::cerr << "Failed while redirecting logging streams: " << e.what() << std::endl;
-       return NO_ERROR;
-     }
-     catch (...)
-     {
-       std::cerr << "Failed while redirecting logging streams. Unknown error!" << std::endl;
-       return NO_ERROR;
-     }
-   }
-   else
-     return ERR_BAD_INPUT;
- }
+      if (err->is_open())
+      {
+        cerrbuf = std::cerr.rdbuf();    // save old buf
+        std::cerr.rdbuf(err->rdbuf());  // redirect std::cerr to out.txt!
+      }
+      else
+      {
+        delete err;
+        err = nullptr;
+      }
+      return NO_ERROR;
+    }
+    catch (const std::exception& e)
+    {
+      std::cerr << "Failed while redirecting logging streams: " << e.what() << std::endl;
+      return NO_ERROR;
+    }
+    catch (...)
+    {
+      std::cerr << "Failed while redirecting logging streams. Unknown error!" << std::endl;
+      return NO_ERROR;
+    }
+  }
+  else
+    return ERR_BAD_INPUT;
+}
 
 
 
@@ -518,8 +518,6 @@ collision_object_bari.mesh_poses.push_back(pose.pose);
 collision_object_bari.operation = collision_object_bari.ADD;
 
 collision_object_baris.push_back(collision_object_bari);
-
-
 
 // Now, let's add the collision object into the world
 // (using a vector that could contain additional objects)
@@ -842,53 +840,7 @@ for (int i = 0; i < above_zero.size()-1; i++){
 
     test_constraints.joint_constraints.push_back(jc1);
 
-    }
-move_group_interface_ptr->setPathConstraints(test_constraints);
-
 }
-
-void MoveIt_Engine::set_box_constraint(std::vector<float> dimension, std::vector<float> position)
-{
-moveit_msgs::Constraints test_constraints;
-
-
-moveit_msgs::PositionConstraint pcm;
-pcm.link_name = "link_tool";
-pcm.header.frame_id = "base_link";
-
-
-moveit_msgs::CollisionObject collision_object;
-collision_object.header.frame_id = "base_link";
-collision_object.id = "box1";
-
-
-shape_msgs::SolidPrimitive work_box;
-work_box.type = work_box.BOX;
-work_box.dimensions.resize(3);
-work_box.dimensions[work_box.BOX_X] = dimension[0]; 
-work_box.dimensions[work_box.BOX_Y] = dimension[1]; 
-work_box.dimensions[work_box.BOX_Z] = dimension[2]; 
-
-geometry_msgs::Pose work_box_pose;
-work_box_pose.orientation.w = 1.0;
-work_box_pose.position.x = position[0];
-work_box_pose.position.y = position[1];
-work_box_pose.position.z = position[2];
-
-collision_object.primitives.push_back(work_box);
-collision_object.primitive_poses.push_back(work_box_pose);
-//collision_object.operation = collision_object.ADD;
-std::vector<moveit_msgs::CollisionObject> collision_objects;
-//collision_objects.push_back(collision_object);
-//planning_scene_interface_ptr->addCollisionObjects(collision_objects);
-
-std::cout << "Box_constrain : " << "dimension : " << dimension[0] << " " << dimension[1] << " " << dimension[2] << std::endl;
-std::cout << "Box_constrain : " << "position : " << position[0] << " " << position[1] << " " << position[2] << std::endl;
-pcm.constraint_region.primitives.push_back(work_box);
-pcm.constraint_region.primitive_poses.push_back(work_box_pose);
-pcm.weight = 1.0;
-
-test_constraints.position_constraints.push_back(pcm);
 
 move_group_interface_ptr->setPathConstraints(test_constraints);
 
@@ -974,6 +926,26 @@ move_group_interface_ptr->setMaxAccelerationScalingFactor(1.0);
 
 
 
+moveit_msgs::PositionConstraint pcm;
+pcm.link_name = "link_tool";
+pcm.header.frame_id = "base_link";
+
+shape_msgs::SolidPrimitive work_box;
+work_box.type = work_box.BOX;
+work_box.dimensions.resize(3);
+work_box.dimensions[work_box.BOX_X] = 0.9; 
+work_box.dimensions[work_box.BOX_Y] = 0.6; 
+work_box.dimensions[work_box.BOX_Z] = 0.8; 
+
+geometry_msgs::Pose work_box_pose;
+work_box_pose.orientation.w = 1.0;
+work_box_pose.position.y = -0.7;
+work_box_pose.position.x = 0.25;
+work_box_pose.position.z = 0.3;
+
+pcm.constraint_region.primitives.push_back(work_box);
+pcm.constraint_region.primitive_poses.push_back(work_box_pose);
+pcm.weight = 1.0;
 
 moveit_msgs::OrientationConstraint ocm;
 ocm.link_name = "link_6";
@@ -987,13 +959,11 @@ ocm.absolute_y_axis_tolerance = 2.0;
 ocm.absolute_z_axis_tolerance = 10.0;
 ocm.weight = 1.0;
 
+
 std::vector<float> above = {0.0, 1.57, 2.53, 2.27, 2.39, 3.14};
 std::vector<float> below = {-3.0, -0.7, -0.7, -2.27, -2, -3.15};
-set_joint_constraint(above, below);
 
-std::vector<float> dimension = {1.15, 0.75, 1.0};
-std::vector<float> position = {0.185, -0.665, 0.455};
-//set_box_constraint(dimension, position);
+set_joint_constraint(above, below);
 
 }
 
@@ -2014,11 +1984,11 @@ double fraction = move_group_interface_ptr->computeCartesianPath(vecULT, eef_ste
 ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
 
 
-  //std::cout << "##################################################################" << std::endl;
-//std::cout << "##################################################################" << std::endl;
-//std::cout <<"TRAJECTO " << trajectory << std::endl;
-//std::cout << "##################################################################" << std::endl;
-//std::cout << "##################################################################" << std::endl;
+  std::cout << "##################################################################" << std::endl;
+std::cout << "##################################################################" << std::endl;
+std::cout <<"TRAJECTO " << trajectory << std::endl;
+std::cout << "##################################################################" << std::endl;
+std::cout << "##################################################################" << std::endl;
 
 
 visual_tools_ptr->trigger(); // to apply changes
@@ -2410,17 +2380,17 @@ if(fichier)
         //std::cout << ligne << std::endl;
         std::string tx, ty, tz, rx, ry, rz;
         std::getline(ss,tx,',');    
-        //std::cout<<"\""<<tx<<"\""<<std::endl;
+        std::cout<<"\""<<tx<<"\""<<std::endl;
         std::getline(ss,ty,','); 
-        //std::cout<<", \""<<ty<<"\""<<std::endl;
+        std::cout<<", \""<<ty<<"\""<<std::endl;
         std::getline(ss,tz,','); 
-        //std::cout<<", \""<<tz<<"\""<<std::endl;
+        std::cout<<", \""<<tz<<"\""<<std::endl;
         std::getline(ss,rx,',');    
-        //std::cout<<"\""<<rx<<"\""<<std::endl;
+        std::cout<<"\""<<rx<<"\""<<std::endl;
         std::getline(ss,ry,','); 
-        //std::cout<<", \""<<ry<<"\""<<std::endl;
+        std::cout<<", \""<<ry<<"\""<<std::endl;
         std::getline(ss,rz,','); 
-        //std::cout<<", \""<<rz<<"\""<<std::endl;
+        std::cout<<", \""<<rz<<"\""<<std::endl;
         Eigen::Isometry3d tf_tcp_in_bari;
 
         //std::cout << "validation " << std::stod(std::string("0.006")) << std::endl;
@@ -2454,18 +2424,18 @@ if(fichier)
         //std::string test2 = "0,006";
 
         //std::cout << "Test" << 0.0006 << " " << std::stod(std::string("0.006")) << " "
-          //        << std::stod(std::string("0,006")) << " " << ::atof(test.c_str()) << " " << ::atof(test2.c_str())
-            //      << std::endl;
+        //          << std::stod(std::string("0,006")) << " " << ::atof(test.c_str()) << " " << ::atof(test2.c_str())
+        //          << std::endl;
 
 
         tf_tcp_in_bari = create_iso_tcp_in_bari(std::stof(tx), std::stof(ty), std::stof(tz), std::stof(rx),
                                                 std::stof(ry), std::stof(rz));
         geometry_msgs::PoseStamped tf_transformed = link6_in_bari_grasp(tf_tcp_in_bari, distance_approch);
         grasping_poses.push_back(tf_transformed);
-        //std::cout << "tf_transformed " << tf_transformed << std::endl;
+        std::cout << "tf_transformed " << tf_transformed << std::endl;
         geometry_msgs::PoseStamped tf_transformed2 = link6_in_bari_grasp(tf_tcp_in_bari, 0.0);
         grasping_poses_true.push_back(tf_transformed2);
-        //std::cout << "tf_transformed2 " << tf_transformed2 << std::endl;
+        std::cout << "tf_transformed2 " << tf_transformed2 << std::endl;
 
     }
 }
@@ -2538,7 +2508,7 @@ move_group_interface_ptr->setStartStateToCurrentState();
 
 
 int Nb_attempt = 3;
-double time_limit = 1.0;
+double time_limit = 5.0;
 std::string planner_id = "LazyPRMstar";
 
 setup_planner(Nb_attempt, time_limit, planner_id);
@@ -2868,7 +2838,7 @@ for (int xi = 0; xi< N_bari_x;xi++){
 }
 std::cout << "before grasping file loaded : " << std::endl;
 
-std::string FilePath = "/home/guillaume/ws_moveit/src/geometric_shapes/test/resources/somfyBarrel.txt";
+std::string FilePath = "C:/moveit_ws/src/staubli_moveit_config/useful_files/somfyBarrel.txt";
 std::cout << "grasping file loaded : " << FilePath << std::endl;
 
 load_grasping_pose(0.05, FilePath);
@@ -2923,8 +2893,8 @@ std::cout << "here we go2" << std::endl;
 // - TrajOptDefault
 
 //TODO TEST
-int Nb_attempt = 4;
-double time_limit = 0.5;
+int Nb_attempt = 1;
+double time_limit = 2;
 //std::string planner_id = "AnytimePathShortening";
 std::string planner_id = planni_id;
 
@@ -2959,11 +2929,11 @@ else{
     vec_grasping_poses[1][k].header.frame_id = "bari0";
     }
 }
-//for (int k = 0; k < vec_grasping_poses[0].size(); k++)
-//{
-  //std::cout << "vec_grasping_poses[0][k].header.frame_id" << vec_grasping_poses[0][k].header.frame_id << std::endl;
-  //std::cout << "vec_grasping_poses[1][k].header.frame_id" << vec_grasping_poses[1][k].header.frame_id << std::endl;
-//}
+for (int k = 0; k < vec_grasping_poses[0].size(); k++)
+{
+  std::cout << "vec_grasping_poses[0][k].header.frame_id" << vec_grasping_poses[0][k].header.frame_id << std::endl;
+  std::cout << "vec_grasping_poses[1][k].header.frame_id" << vec_grasping_poses[1][k].header.frame_id << std::endl;
+}
 
 
 
@@ -3370,7 +3340,7 @@ int main(int argc, char** argv)
 
   std::system("start roslaunch staubli_moveit_config demo.launch rviz_tutorial:=true;");
 
-  std::this_thread::sleep_for(std::chrono::seconds(30)); 
+  std::this_thread::sleep_for(std::chrono::seconds(30));
   //std::cout << argv[0] << argv[1] << argv[2] << argv[3] << argv[4] << std::endl;
   //char** argv2;
   int argc2 =0;
@@ -3488,7 +3458,7 @@ int main(int argc, char** argv)
   std::cout << "###########" << std::endl;
 
   int M = 2;
-  int N = 2; //(+1 bari detecté par scan)
+  int N = 8; //(+1 bari detecté par scan)
 
 
   //full_scenario_without_attach( move_group_interface, collision_object_baris, planning_scene_interface, scan_pose, visual_tools, joint_model_group, final_poses, bari_poses, M, N);
@@ -3496,7 +3466,7 @@ int main(int argc, char** argv)
   //moveit_engine_test.full_scenario( collision_object_baris, scan_pose, final_poses, bari_poses, grasping_poses, M, N);
 
   //moveit_engine_test.full_scenario_grasp(collision_object_baris, scan_pose, final_poses, bari_poses, vec_grasping_poses, M, N);
-  std::string plan_id = argv[1];
+  std::string plan_id = "";//argv[1];
   moveit_engine_test.full_scenario_grasp( M, N, plan_id);
 
   //moveit_engine_test.full_scenario_grasp_robot(M, N);

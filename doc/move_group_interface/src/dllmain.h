@@ -40,6 +40,9 @@ extern "C" __declspec(dllexport) int __cdecl go_to_position_joint(arr1Dd_LV join
 
 extern "C" __declspec(dllexport) int __cdecl go_to_position_pose(Position Pose, Orientation Rota, LStrHandle repere,
                                                                 arr2Dd_LV traj);
+extern "C" __declspec(dllexport) int __cdecl go_to_position_grasp(int ID_grasp, bool true_or_approch, LStrHandle repere, arr2Dd_LV traj);
+
+extern "C" __declspec(dllexport) int __cdecl go_to_position_cartesian(Position Pose, Orientation Rota, LStrHandle repere, arr2Dd_LV traj);
 
 extern "C" __declspec(dllexport) int __cdecl GetStatistics(double* time_find_planning, double* time_traj,
                                                            double* nb_step_traj, double* distance_traveled_tool,

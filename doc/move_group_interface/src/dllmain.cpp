@@ -219,14 +219,14 @@ __declspec(dllexport) int __cdecl go_to_position_joint(arr1Dd_LV joints, arr2Dd_
   std::vector<double> join_goal;
 
   for (size_t i = 0; i < (*joints)->dimSize; i++) {
-    join_goal.push_back((*joints)->elt[i]);
+    join_goal.push_back(((*joints)->elt[i])*M_PI/180.0);
     std::cout << "LV target : " << join_goal[i] << std::endl;
   }
   MoveIt_Engine::GetInstance().setup_planner(3,3.0,"");
 
 
 
-  MoveIt_Engine::GetInstance().move_group_interface_ptr->setStartState(*MoveIt_Engine::GetInstance().move_group_interface_ptr->getCurrentState());
+  //MoveIt_Engine::GetInstance().move_group_interface_ptr->setStartState(*MoveIt_Engine::GetInstance().move_group_interface_ptr->getCurrentState());
 
   
   std::vector<std::vector<double>> trajectory = MoveIt_Engine::GetInstance().go_to_position(join_goal);
@@ -288,6 +288,76 @@ __declspec(dllexport) int __cdecl go_to_position_pose(Position Pose, Orientation
 
   return 0;
 }
+
+
+__declspec(dllexport) int __cdecl go_to_position_grasp(int ID_grasp, bool true_or_approch, LStrHandle repere, arr2Dd_LV traj)
+{
+	if (!MoveIt_Engine::CheckInstance())
+		return ERR_CLASS_INSTANCE;
+
+
+	std::string repere_str((char*)LStrBuf(*repere), 0, LStrLen(*repere));
+
+	std::vector<std::vector<double>> trajectory = MoveIt_Engine::GetInstance().go_to_position(MoveIt_Engine::GetInstance().vec_grasping_poses[true_or_approch], ID_grasp);
+
+	std::cout << "trajectory size : " << trajectory.size() << " - " << trajectory[0].size() << std::endl;
+
+	MgErr err(NumericArrayResize(fD, 2, (UHandle*)(&traj), trajectory.size() * trajectory[0].size() * sizeof(double)));
+
+	(*traj)->dimSize[0] = (uint32_t)(trajectory.size());
+	(*traj)->dimSize[1] = (uint32_t)(trajectory[0].size());
+
+	for (size_t i = 0; i < trajectory.size(); i++)
+	{
+		for (size_t j = 0; j < trajectory[0].size(); j++)
+		{
+			(*traj)->elt[trajectory[0].size() * i + j] = trajectory[i][j];
+		}
+	}
+
+	return 0;
+}
+
+__declspec(dllexport) int __cdecl go_to_position_cartesian(Position Pose, Orientation Rota, LStrHandle repere, arr2Dd_LV traj)
+  {
+  if (!MoveIt_Engine::CheckInstance())
+    return ERR_CLASS_INSTANCE;
+
+
+  std::string repere_str((char*)LStrBuf(*repere), 0, LStrLen(*repere));
+  
+  std::vector<double> vector_pose;
+  vector_pose[0] = Pose.Tx;
+  vector_pose[1] = Pose.Ty;
+  vector_pose[2] = Pose.Tz;
+
+  vector_pose[3] = Rota.Rx;
+  vector_pose[4] = Rota.Ry;
+  vector_pose[5] = Rota.Rz;
+
+  geometry_msgs::PoseStamped Pose_goal = MoveIt_Engine::GetInstance().get_pose(vector_pose, repere_str);
+
+  std::vector<std::vector<double>> trajectory = MoveIt_Engine::GetInstance().trajecto_approch(Pose_goal);
+
+  std::cout << "trajectory size : " << trajectory.size() << " - " << trajectory[0].size() << std::endl;
+
+  MgErr err(NumericArrayResize(fD, 2, (UHandle*)(&traj), trajectory.size() * trajectory[0].size() * sizeof(double)));
+
+  (*traj)->dimSize[0] = (uint32_t)(trajectory.size());
+  (*traj)->dimSize[1] = (uint32_t)(trajectory[0].size());
+
+  for (size_t i = 0; i < trajectory.size(); i++)
+  {
+    for (size_t j = 0; j < trajectory[0].size(); j++)
+    {
+      (*traj)->elt[trajectory[0].size() * i + j] = trajectory[i][j];
+    }
+  }
+
+  return 0;
+}
+
+
 
 __declspec(dllexport) int __cdecl do_simulation(const int N, const int M) {
   if (!MoveIt_Engine::CheckInstance())
