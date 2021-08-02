@@ -528,18 +528,19 @@ planning_scene_interface_ptr->addCollisionObjects(collision_object_baris);
 }
 
 
-void MoveIt_Engine::load_carton_in_scene(std::vector<moveit_msgs::CollisionObject>& collision_object_baris)
+void MoveIt_Engine::load_carton_in_scene(std::vector<moveit_msgs::CollisionObject>& collision_object_baris, std::string modelpath, std::string str_id_obj)
 {
 
 //std::string modelpath = "/home/pc-m/Documents/My-cao/barillet.obj";
-std::string modelpath = "package://staubli_moveit_config/useful_files/Contenant_barillet.stl";
+//std::string modelpath = "package://staubli_moveit_config/useful_files/Contenant_barillet.stl";
 shape_msgs::Mesh mesh_bary = load_mesh(modelpath);
 
 // Now let's define a collision object ROS message for the robot to avoid.
 moveit_msgs::CollisionObject collision_object_bari;
 
 // The id of the object is used to identify it.
-std::string str_id_obj = "carton";
+
+//std::string str_id_obj = "carton";
 
 // Define a pose for the box (specified relative to frame_id)
 geometry_msgs::PoseStamped pose;
@@ -573,7 +574,7 @@ load_obj_in_scene(collision_object_baris, mesh_bary, pose, str_id_obj);
 }
 
 
-void MoveIt_Engine::create_carton_in_scene(std::vector<moveit_msgs::CollisionObject>& collision_object_baris,
+void MoveIt_Engine::create_carton_in_scene(std::vector<moveit_msgs::CollisionObject>& collision_object_baris, std::string frame_base,
                                             std::vector<double> boxInsideSizeM, std::vector<double> boxInsidePoseM,
                                             std::vector<double> boxThickSideBottomM)
 {
@@ -606,7 +607,7 @@ tf2::fromMsg(tf_to_scene.pose, tf_to_scene_tot); //pose in bary frame
 
 // Now let's define a collision object ROS message for the robot to avoid.
 moveit_msgs::CollisionObject collision_object_box;
-collision_object_box.header.frame_id = "base_link";
+collision_object_box.header.frame_id = frame_base;
 // The id of the object is used to identify it.
 collision_object_box.id = "carton1";
 
@@ -633,7 +634,7 @@ pose.position.z = 0.0;
 Eigen::Isometry3d tf_carton;
 tf2::fromMsg(pose, tf_carton); //pose in bary frame
 
-pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+pose = tf2::toMsg( tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
 
 
 
@@ -644,7 +645,7 @@ collision_object_box.operation = collision_object_box.ADD;
 collision_object_baris.push_back(collision_object_box);
 //////
 
-collision_object_box.header.frame_id = "base_link";
+collision_object_box.header.frame_id = frame_base;
 // The id of the object is used to identify it.
 collision_object_box.id = "carton2";
 q_rot = set_quentin(-90,0.0,0.0); //bari
@@ -657,7 +658,7 @@ pose.position.y = (boxInsideSizeM[1] / 2.0 + boxThickSideBottomM[0] / 2.0);
 pose.position.z = 0.0;
 
 tf2::fromMsg(pose, tf_carton); //pose in bary frame
-pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+pose = tf2::toMsg( tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
 
 
 collision_object_box.primitives.push_back(primitive);
@@ -670,7 +671,7 @@ collision_object_baris.push_back(collision_object_box);
 ////////////////////////////////
 
 
-collision_object_box.header.frame_id = "base_link";
+collision_object_box.header.frame_id = frame_base;
 // The id of the object is used to identify it.
 collision_object_box.id = "carton3";
 
@@ -690,7 +691,7 @@ pose.position.y = 0.0;
 pose.position.z = 0.0;
 
 tf2::fromMsg(pose, tf_carton); //pose in bary frame
-pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+pose = tf2::toMsg( tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
 
 collision_object_box.primitives.push_back(primitive);
 collision_object_box.primitive_poses.push_back(pose);
@@ -699,7 +700,7 @@ collision_object_box.operation = collision_object_box.ADD;
 collision_object_baris.push_back(collision_object_box);
 //////
 
-collision_object_box.header.frame_id = "base_link";
+collision_object_box.header.frame_id = frame_base;
 // The id of the object is used to identify it.
 collision_object_box.id = "carton4";
 q_rot = set_quentin(0.0,-90,0.0); //bari
@@ -712,7 +713,7 @@ pose.position.y = 0.0;
 pose.position.z = 0.0;
 
 tf2::fromMsg(pose, tf_carton); //pose in bary frame
-pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+pose = tf2::toMsg( tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
 
 collision_object_box.primitives.push_back(primitive);
 collision_object_box.primitive_poses.push_back(pose);
@@ -722,7 +723,7 @@ collision_object_baris.push_back(collision_object_box);
 
 /////////////////////////////////////////
 
-collision_object_box.header.frame_id = "base_link";
+collision_object_box.header.frame_id = frame_base;
 // The id of the object is used to identify it.
 collision_object_box.id = "carton5";
 
@@ -742,7 +743,7 @@ pose.position.y = 0.0;
 pose.position.z = -(boxInsideSizeM[2] + boxThickSideBottomM[1])/ 2.0;
 
 tf2::fromMsg(pose, tf_carton); //pose in bary frame
-pose = tf2::toMsg(tf_base_link_moveit_to_halcon * tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
+pose = tf2::toMsg( tf_to_scene_tot * tf_carton); //world to bary * pose in bary = pose in world
 
 
 collision_object_box.primitives.push_back(primitive);
@@ -777,49 +778,8 @@ return sqrt(pow(x1-x2,2)+pow(y1-y2,2)+pow(z1-z2,2)+pow(v1-v2,2)+pow(u1-u2,2)+pow
 }
 
 
-bool MoveIt_Engine::checkIkValidity(robot_state::RobotState* robot_state,
-                                    const robot_state::JointModelGroup* joint_group,
-                                    const double* joint_group_variable_values)
-{
-
-return true;
-}
 
 
-geometry_msgs::Quaternion MoveIt_Engine::apply_rotation(geometry_msgs::Quaternion q1,
-                                                        geometry_msgs::Quaternion q_to_apply)
-{
-
-geometry_msgs::Quaternion result;
-tf2::Quaternion q_orig, q_rot, q_new;
-
-// Get the original orientation of 'commanded_pose'
-tf2::convert(q1 , q_orig);
-tf2::convert(q_to_apply , q_rot);
-
-
-q_new = q_rot*q_orig;  // Calculate the new orientation
-q_new.normalize();
-
-// Stuff the new rotation back into the pose. This requires conversion into a msg type
-tf2::convert(q_new, result);
-return result;
-
-}
-
-
-tf2::Quaternion MoveIt_Engine::apply_rotation(tf2::Quaternion q1, tf2::Quaternion q_rot)
-{
-
-tf2::Quaternion q_new;
-
-
-q_new = q_rot*q1;  // Calculate the new orientation
-q_new.normalize();
-
-return q_new;
-
-}
 
 
 void MoveIt_Engine::set_joint_constraint(std::vector<float> above_zero, std::vector<float> below_zero)
@@ -1984,7 +1944,7 @@ double fraction = move_group_interface_ptr->computeCartesianPath(vecULT, eef_ste
 ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
 
 
-  std::cout << "##################################################################" << std::endl;
+std::cout << "##################################################################" << std::endl;
 std::cout << "##################################################################" << std::endl;
 std::cout <<"TRAJECTO " << trajectory << std::endl;
 std::cout << "##################################################################" << std::endl;
@@ -2014,7 +1974,7 @@ return trajecto_waypoint_joint;
 }
 
 
-void MoveIt_Engine::trajecto_scan_to_bari(geometry_msgs::PoseStamped bari_pose)
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_scan_to_bari(geometry_msgs::PoseStamped bari_pose)
 {
 
 Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2028,10 +1988,12 @@ visual_tools_ptr->trigger();
 
 std::vector<std::vector<double>> traj6 = go_to_position( bari_pose);
 
+return (traj6);
+
 }
 
 
-void MoveIt_Engine::trajecto_scan_to_bari(int ID_grasp)
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_scan_to_bari(int ID_grasp)
 {
 
 Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2056,73 +2018,7 @@ traj0.insert(traj0.end(),std::make_move_iterator(traj1.begin()),std::make_move_i
 
 export_trajectory(traj0);
 
-}
-
-
-void MoveIt_Engine::trajecto_initial_to_scan_and_bari(std::vector<moveit_msgs::CollisionObject>& collision_object_baris,
-                                                      geometry_msgs::PoseStamped scan_pose,
-                                                      std::vector<geometry_msgs::PoseStamped>& bari_poses)
-{
-
-
-Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-text_pose.translation().z() = 1.3;
-
-move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
-
-
-std::vector<std::vector<double>> traj1 = go_to_position(scan_pose);
-
-visual_tools_ptr->publishText(text_pose, "Go to scan position from origin", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-visual_tools_ptr->trigger();
-
-//visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-
-load_bari_in_scene_simulation(collision_object_baris);
-load_carton_in_scene(collision_object_baris);
-
-
-std::chrono::seconds dura70(70);
-
-// Now, let's add the collision object into the world
-// (using a vector that could contain additional objects)
-//ROS_INFO_NAMED("tutorial", "Add an object into the world");
-//planning_scene_interface.addCollisionObjects(collision_objects);
-
-// Show text in RViz of status and wait for MoveGroup to receive and process the collision object message
-visual_tools_ptr->publishText(text_pose, "Add object", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-visual_tools_ptr->trigger();
-
-
-//visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
-
-
-
-
-visual_tools_ptr->deleteAllMarkers();
-visual_tools_ptr->publishText(text_pose, " current : show bari position", rviz_visual_tools::WHITE, rviz_visual_tools::XLARGE);
-//visual_tools.publishAxisLabeled(bari_poses[0], "bari_pose");
-visual_tools_ptr->trigger(); // to apply changes
-
-
-
-
-
-
-
-
-move_group_interface_ptr->setStartState(*move_group_interface_ptr->getCurrentState());
-
-
-trajecto_scan_to_bari( bari_poses[0]);
-
-//visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to start the demo");
-
-
-//trajecto_approch(move_group_interface, collision_object_baris, planning_scene_interface, visual_tools, bari_poses[0]);
-
+return (traj0);
 
 }
 
@@ -2200,7 +2096,7 @@ return traj0;
 
 
 
-void MoveIt_Engine::trajecto_out_to_bari(geometry_msgs::PoseStamped& bari_pose)
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_out_to_bari(geometry_msgs::PoseStamped& bari_pose)
 {
 
 Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2214,10 +2110,10 @@ visual_tools_ptr->trigger();
 
 std::vector<std::vector<double>> traj5 = go_to_position(bari_pose);
 
-
+return (traj5);
 }
 
-void MoveIt_Engine::trajecto_out_to_bari(int ID_grasp)
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_out_to_bari(int ID_grasp)
 {
 
 Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
@@ -2298,13 +2194,13 @@ if (ID_grasp != -1){
 // visual_tools.trigger(); // to apply changes
 // //visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the new object is attached to the robot");
 
-
+return traj5;
 
 }
 
 
 
-void MoveIt_Engine::trajecto_bari_to_out(int ID_grasp, geometry_msgs::PoseStamped& final_pose)
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_bari_to_out(int ID_grasp, geometry_msgs::PoseStamped& final_pose)
 {
 
 if (ID_grasp != -1){
@@ -2323,10 +2219,12 @@ std::vector<std::vector<double>> traj6 = go_to_position( final_pose);
 
 export_trajectory(traj6);
 
+return traj6;
+
 }
 
 
-void MoveIt_Engine::trajecto_bari_to_out(geometry_msgs::PoseStamped& final_pose)
+std::vector<std::vector<double>> MoveIt_Engine::trajecto_bari_to_out(geometry_msgs::PoseStamped& final_pose)
 {
 
 
@@ -2343,6 +2241,8 @@ visual_tools_ptr->trigger();
 
 std::vector<std::vector<double>> traj6 = go_to_position(final_pose);
 
+
+return traj6;
 }
 
 int MoveIt_Engine::load_grasping_pose(float distance_approch,std::string FilePath)
@@ -2540,7 +2440,7 @@ fill_vector_cin(boxInsidePoseM, "please give the POSE of the inside of the box i
 fill_vector_cin(boxThickSideBottomM, "please give the size of the wall of the box in 1 line : tx ty");
 
 
-create_carton_in_scene(collision_object_baris, boxInsideSizeM, boxInsidePoseM, boxThickSideBottomM );
+create_carton_in_scene(collision_object_baris, "base", boxInsideSizeM, boxInsidePoseM, boxThickSideBottomM );
 
 
 
@@ -2911,7 +2811,11 @@ std::cout << "here we go4" << std::endl;
 
 load_bari_in_scene_simulation(collision_object_baris);
 std::cout << "here we go5" << std::endl;
-load_carton_in_scene(collision_object_baris);
+
+std::string modelpath = "package://staubli_moveit_config/useful_files/Contenant_barillet.stl";
+std::string str_id_obj = "carton";
+
+load_carton_in_scene(collision_object_baris, modelpath, str_id_obj);
 std::cout << "here we go6" << std::endl;
 //TODO CHANGE
 int ID_grasp = 13; //bari
@@ -3312,27 +3216,6 @@ visual_tools_ptr->trigger();
 }
 
 
-
-geometry_msgs::Quaternion MoveIt_Engine::relative_quat_rotation(geometry_msgs::Quaternion q1,
-                                                                geometry_msgs::Quaternion q2)
-{
-
-geometry_msgs::Quaternion result;
-tf2::Quaternion q_orig1, q_inv1, q_orig2, q_new;
-
-tf2::convert(q1, q_orig1);
-tf2::convert(q2, q_orig2);
-
-q_inv1 = q_orig1;
-q_inv1[3] = - q_inv1[3]; //inverse quat
-
-q_new = q_orig2*q_inv1;
-q_new.normalize();
-
-tf2::convert(q_new, result);
-return result;
-}
-
 const std::string MoveIt_Engine::PLANNING_GROUP = "arm_group";
 
 int main(int argc, char** argv)
@@ -3467,9 +3350,9 @@ int main(int argc, char** argv)
 
   //moveit_engine_test.full_scenario_grasp(collision_object_baris, scan_pose, final_poses, bari_poses, vec_grasping_poses, M, N);
   std::string plan_id = "";//argv[1];
-  moveit_engine_test.full_scenario_grasp( M, N, plan_id);
+  //moveit_engine_test.full_scenario_grasp( M, N, plan_id);
 
-  //moveit_engine_test.full_scenario_grasp_robot(M, N);
+  moveit_engine_test.full_scenario_grasp_robot(M, N);
 
 
 
