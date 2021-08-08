@@ -256,6 +256,9 @@ public:
   // used to save the apprch traj inverse for the return
   moveit_msgs::RobotTrajectory inv_approch_msg_traj;
 
+  // used to save the complete trajectory in order to send to LabVIEW
+  moveit_msgs::RobotTrajectory last_trajectory_found;
+
   //bool to execute or not the approch
   bool do_execution_approch = 1;
 
